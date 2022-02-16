@@ -47,8 +47,7 @@ def updateSong(guildId, memberId, songname, repoPath):
         df.to_csv(repoPath + "/DiscordVoiceUsers.csv", index=False)
 
 async def playConnection(message, repoPath):
-    song = audioReader(message.guild.id,message.author.id)
-    print(song)
+    song = audioReader(message.guild.id, message.author.id, repoPath)
     await playfile(song, message.author, repoPath)
 
 async def playfile(song, member, repoPath):

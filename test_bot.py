@@ -52,14 +52,14 @@ async def on_voice_state_update(member, before, after):
     vc_before = before.channel
     vc_after = after.channel
         
-    song = connectionTune.audioReader(member.guild.id,member.id)
+    song = connectionTune.audioReader(member.guild.id, member.id, repoPath)
     # Malllows Bot:883163633666908172 and Pancake: 239631525350604801
     if vc_after != vc_before and vc_after is not None and member.bot == False:
         try:
             if song != 'False':
                 vc = await vc_after.connect()
                 path += "\\" + song
-                vc.play(discord.FFmpegPCMAudio(path))#, executable= repoPath + r"\ffmpeg\bin\ffmpeg.exe"))
+                vc.play(discord.FFmpegPCMAudio(path, executable= repoPath + r"\ffmpeg\bin\ffmpeg.exe"))
                 while vc.is_playing():
                     #Start Playing
                     sleep(.1)            
@@ -67,7 +67,7 @@ async def on_voice_state_update(member, before, after):
             else:
                 vc = await vc_after.connect()
                 path += r"\teamspeak2.mp3"
-                vc.play(discord.FFmpegPCMAudio(path))#, executable=repoPath + r"\ffmpeg\bin\ffmpeg.exe"))
+                vc.play(discord.FFmpegPCMAudio(path, executable=repoPath + r"\ffmpeg\bin\ffmpeg.exe"))
                 while vc.is_playing():
                     #Start Playing
                     sleep(.1)            
@@ -92,7 +92,7 @@ async def sendError(guild,e):
     embed.add_field(name="Error",value=str(e))
     await botchannel.send(embed=embed)
     
-client.run('ODkwNzM4OTAxMzk0ODE3MTA1.YU0LPw.ULGNHZPjR34NKIpi7XXG3lS3Tq4')
+client.run(open('MallowsTestBotKeys.txt','r').readline())
 
 ##General
 ##715933625396494358
