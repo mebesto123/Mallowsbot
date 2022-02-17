@@ -1,16 +1,30 @@
 import discord
 import pandas as pd
 from time import sleep
+from discord.utils import find
 import os
+import shutil
+import configparser
 import drunkphrase
 import connectionTune
 
 client = discord.Client()
-repoPath = r"C:\Users\Mebesto\Documents\Code and Shit\Discord Bots"
+
+##Setting For Bot itself
+config = configparser.ConfigParser()
+config.read('.'+ os.path.sep + 'settings'+ os.path.sep + 'botsettings.ini')
 
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
+
+@client.event
+async def on_guild_join(guild):
+    general = find(lambda x: x.name == 'general',  guild.text_channels)
+    if general and general.permissions_for(guild.me).send_messages:
+        await general.send('Hello {}! I am Mallows Bot. Try `-help connectiontune` for Mallow Bot uses'.format(guild.name))
+    
+
 
 @client.event
 async def on_message(message):
@@ -32,34 +46,34 @@ async def on_message(message):
     
     # if message.content.lower().startswith("-playconnectiontune"):
     #     await playConnection(message)
-    
+    if message.content.lower().startswith("-test"):
+        await testmethod(message, config["DEFAULT"]["path"])
+
     if message.content.lower().startswith("-connectiontune"):
-        await connectionTune.createConnectionTune(message, repoPath)
+        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"])
         
     
     if message.content.lower().startswith("-help connectiontune") or message.content.lower().startswith("-help mallowsbot"):
         await connectionTune.helpConnectionTune(message)
     
     if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection"):
-        await connectionTune.playConnection(message, repoPath)
+        await connectionTune.playConnection(message, config["DEFAULT"]["path"])
     
     
     
 @client.event
 async def on_voice_state_update(member, before, after):
-    #print("Member Name", member.name,"Member Id ", member.id, "  Guild Id  ", member.guild.id)
-    path = repoPath + '\Video.Audio'
+    path = config["DEFAULT"]["path"] + '\Video.Audio'
     vc_before = before.channel
     vc_after = after.channel
         
-    song = connectionTune.audioReader(member.guild.id, member.id, repoPath)
-    # Malllows Bot:883163633666908172 and Pancake: 239631525350604801
+    song = connectionTune.audioReader(member.guild.id, member.id, config["DEFAULT"]["path"])
     if vc_after != vc_before and vc_after is not None and member.bot == False:
         try:
             if song != 'False':
                 vc = await vc_after.connect()
                 path += "\\" + song
-                vc.play(discord.FFmpegPCMAudio(path, executable= repoPath + r"\ffmpeg\bin\ffmpeg.exe"))
+                vc.play(discord.FFmpegPCMAudio(path, executable= config["DEFAULT"]["ffmpeg"]))
                 while vc.is_playing():
                     #Start Playing
                     sleep(.1)            
@@ -67,7 +81,7 @@ async def on_voice_state_update(member, before, after):
             else:
                 vc = await vc_after.connect()
                 path += r"\teamspeak2.mp3"
-                vc.play(discord.FFmpegPCMAudio(path, executable=repoPath + r"\ffmpeg\bin\ffmpeg.exe"))
+                vc.play(discord.FFmpegPCMAudio(path, executable= config["DEFAULT"]["ffmpeg"]))
                 while vc.is_playing():
                     #Start Playing
                     sleep(.1)            
@@ -91,10 +105,11 @@ async def sendError(guild,e):
             color=discord.Color.red())
     embed.add_field(name="Error",value=str(e))
     await botchannel.send(embed=embed)
+
+async def testmethod(message, repoPath):
+    await message.channel.send("Mallow")
     
-client.run(open('MallowsTestBotKeys.txt','r').readline())
+client.run(config["KEY"]["testclientkey"])
 
-##General
-##715933625396494358
 
-##Install discord ffmpeg PyNaCl?
+

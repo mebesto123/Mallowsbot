@@ -2,6 +2,7 @@ import discord
 import pandas as pd
 from time import sleep
 import os
+import platform
 
 async def helpConnectionTune(message):
     embed = discord.Embed(
@@ -13,7 +14,7 @@ async def helpConnectionTune(message):
 async def createConnectionTune(message, repoPath):
     if len(message.attachments) == 1:
         file = message.attachments[0]
-        path = repoPath + r"/Video.Audio"
+        path = repoPath + os.path.sep + "Video.Audio"
         filename = str(message.author.id) + str(message.guild.id) + "Tune" + file.filename[file.filename.rfind("."):]
         await file.save(os.path.join(path,filename))
         updateSong(message.guild.id,message.author.id,filename, repoPath)
@@ -26,7 +27,7 @@ async def createConnectionTune(message, repoPath):
         await message.channel.send(embed=embed)
 
 def audioReader(guildId, memberId, repoPath):
-    df = pd.read_csv(repoPath + r"/DiscordVoiceUsers.csv")
+    df = pd.read_csv(repoPath + os.path.sep + "DiscordVoiceUsers.csv")
     song = df[(df.Guild == guildId) & (df.Member == memberId)].Song
     
     if song.empty:
@@ -35,27 +36,30 @@ def audioReader(guildId, memberId, repoPath):
     return song.values[0]
 
 def updateSong(guildId, memberId, songname, repoPath):
-    df = pd.read_csv(repoPath + "/DiscordVoiceUsers.csv")
+    df = pd.read_csv(repoPath + os.path.sep + "DiscordVoiceUsers.csv")
     exists = df[(df.Guild == guildId) & (df.Member == memberId)].index
     
     if exists.empty:
         temp = {"Guild": guildId,"Member": memberId,"Song": songname}
         df = df.append(temp, ignore_index=True)
-        df.to_csv(repoPath + "/DiscordVoiceUsers.csv", index=False)
+        df.to_csv(repoPath + os.path.sep + "DiscordVoiceUsers.csv", index=False)
     else:
         df.at[exists[0],"Song"] = songname
-        df.to_csv(repoPath + "/DiscordVoiceUsers.csv", index=False)
+        df.to_csv(repoPath + os.path.sep + "DiscordVoiceUsers.csv", index=False)
 
 async def playConnection(message, repoPath):
     song = audioReader(message.guild.id, message.author.id, repoPath)
+    if song == 'False':
+        song = "teamspeak2.mp3"
     await playfile(song, message.author, repoPath)
 
 async def playfile(song, member, repoPath):
-    path = repoPath + '\Video.Audio'
+    path = repoPath + os.path.sep + 'Video.Audio'
     if member.voice.channel is not None and member.bot == False:
         vc = await member.voice.channel.connect()
-        path += "\\" + song
-        vc.play(discord.FFmpegPCMAudio(path, executable= repoPath + r"\ffmpeg\bin\ffmpeg.exe"))
+        path += os.path.sep + song
+        exe = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
+        vc.play(discord.FFmpegPCMAudio(path, executable= repoPath + os.path.sep + "ffmpeg" + os.path.sep + "bin" + os.path.sep + exe))
         while vc.is_playing():
             #Start Playing
             sleep(.1)            
