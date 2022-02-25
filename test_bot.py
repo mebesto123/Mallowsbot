@@ -7,6 +7,7 @@ import shutil
 import configparser
 import drunkphrase
 import connectionTune
+import voicechatlog
 
 client = discord.Client()
 
@@ -66,7 +67,10 @@ async def on_voice_state_update(member, before, after):
     path = config["DEFAULT"]["path"] + '\Video.Audio'
     vc_before = before.channel
     vc_after = after.channel
-        
+
+    #Send Voice Channel Log updates
+    await voicechatlog.writeToVoiceLog(member, before, after)
+
     song = connectionTune.audioReader(member.guild.id, member.id, config["DEFAULT"]["path"])
     if vc_after != vc_before and vc_after is not None and member.bot == False:
         try:
