@@ -60,7 +60,8 @@ async def on_message(message):
     if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection"):
         await connectionTune.playConnection(message, config["DEFAULT"]["path"])
     
-    
+# @client.event
+# async def on_reaction_add(reaction, user):   
     
 @client.event
 async def on_voice_state_update(member, before, after):
