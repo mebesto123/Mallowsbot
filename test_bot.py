@@ -39,8 +39,8 @@ async def on_message(message):
     # if message.content.lower().startswith("-drunkphrase add"):
     #     await drunkphrase.addDrunkPhrase(message)
         
-    # if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
-    #     await drunkphrase.playDrunkPhrase(message, repoPath)
+    if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
+        await drunkphrase.playDrunkPhrase(message, config["DEFAULT"]["path"])
         
     # if message.content.lower().startswith("-help drunkphrase"):
     #     await drunkphrase.helpDrunkPhrase(message)
@@ -51,14 +51,22 @@ async def on_message(message):
         await testmethod(message, config["DEFAULT"]["path"])
 
     if message.content.lower().startswith("-connectiontune"):
-        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"])
-        
-    
+        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["connectioncsv"])
+
+    if message.content.lower().startswith("-disconnectiontune"):
+        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["disconnectioncsv"])
+
     if message.content.lower().startswith("-help connectiontune") or message.content.lower().startswith("-help mallowsbot"):
         await connectionTune.helpConnectionTune(message)
+
+    if message.content.lower().startswith("-help disconnectiontune") or message.content.lower().startswith("-help mallowsbot"):
+        await connectionTune.helpDisconnectionTune(message)
     
-    if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection"):
-        await connectionTune.playConnection(message, config["DEFAULT"]["path"])
+    if message.content.lower().startswith("-testplayconnectiontune") or message.content.lower().startswith("-playconnection"):
+        await connectionTune.playConnection(message.guild.id, message.author, config["DEFAULT"]["path"])
+
+    if message.content.lower().startswith("-testplaydisconnectiontune") or message.content.lower().startswith("-playdisconnection"):
+        await connectionTune.playDisconnection(message.guild.id, message.author, config["DEFAULT"]["path"])
     
 # @client.event
 # async def on_reaction_add(reaction, user):   
@@ -72,25 +80,14 @@ async def on_voice_state_update(member, before, after):
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
 
-    song = connectionTune.audioReader(member.guild.id, member.id, config["DEFAULT"]["path"])
     if vc_after != vc_before and vc_after is not None and member.bot == False:
         try:
-            if song != 'False':
-                vc = await vc_after.connect()
-                path += "\\" + song
-                vc.play(discord.FFmpegPCMAudio(path, executable= config["DEFAULT"]["ffmpeg"]))
-                while vc.is_playing():
-                    #Start Playing
-                    sleep(.1)            
-                await vc.disconnect()
-            else:
-                vc = await vc_after.connect()
-                path += r"\teamspeak2.mp3"
-                vc.play(discord.FFmpegPCMAudio(path, executable= config["DEFAULT"]["ffmpeg"]))
-                while vc.is_playing():
-                    #Start Playing
-                    sleep(.1)            
-                await vc.disconnect()
+            await connectionTune.playConnection(member.guild.id, member, config["DEFAULT"]["path"])
+        except discord.errors.ClientException as e:
+            await sendError(member.guild, e)
+    elif vc_after != vc_before and vc_after is None and member.bot == False:
+        try:
+            await connectionTune.playDisconnection(member.guild.id, member, config["DEFAULT"]["path"], before)
         except discord.errors.ClientException as e:
             await sendError(member.guild, e)
 

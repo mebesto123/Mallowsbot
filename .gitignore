@@ -135,3 +135,6 @@ MyInfo.txt
 #key files
 MallowsTestBotKeys.txt
 MallowsBotKey.txt
+
+#Music
+*.mp3

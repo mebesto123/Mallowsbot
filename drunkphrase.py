@@ -22,7 +22,7 @@ async def playDrunkPhrase(message, repoPath):
     
     cmd = message.content.split(" ", 1 )[1][1:].split('"', 1 )
     if len(cmd) < 2:
-        commandError(message.channel, "Incorrect use of the command. Try -help drunkphrase to see correct uses")
+        await commandError(message.channel, "Incorrect use of the command. Try -help drunkphrase to see correct uses")
         return
     
     text = cmd[0]
