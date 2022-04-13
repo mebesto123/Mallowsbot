@@ -73,7 +73,7 @@ async def on_message(message):
     
 @client.event
 async def on_voice_state_update(member, before, after):
-    path = config["DEFAULT"]["path"] + '\Video.Audio'
+    path = config["DEFAULT"]["path"] + os.path.sep + 'Video.Audio'
     vc_before = before.channel
     vc_after = after.channel
 
