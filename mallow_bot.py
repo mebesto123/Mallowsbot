@@ -43,10 +43,10 @@ async def on_message(message):
     if message.content.lower().startswith("-help disconnectiontune") or message.content.lower().startswith("-help mallowsbot"):
         await connectionTune.helpDisconnectionTune(message)
     
-    if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection"):
+    if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection") or message.content.lower().startswith("-intro"):
         await connectionTune.playConnection(message.guild.id, message.author, config["DEFAULT"]["path"])
 
-    if message.content.lower().startswith("-playdisconnectiontune") or message.content.lower().startswith("-playdisconnection"):
+    if message.content.lower().startswith("-playdisconnectiontune") or message.content.lower().startswith("-playdisconnection") or message.content.lower().startswith("-outro"):
         await connectionTune.playDisconnection(message.guild.id, message.author, config["DEFAULT"]["path"])
     
 # @client.event
