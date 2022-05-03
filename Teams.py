@@ -6,10 +6,10 @@ import random
 from EasyErrors import easyError
 
 
-async def CreateTeams(message):
+async def CreateTeams(message,client):
     if message.author.voice is not None:
         channel = message.author.voice.channel
-        members = channel.members
+        members = [message.guild.get_member(x) for x in list(channel.voice_states.keys())]
         if len(message.content.split(" ")) > 1:
             try:
                 numTeams = int(message.content.split(" ")[1])
@@ -22,9 +22,11 @@ async def CreateTeams(message):
                 for x in members:
                     teamCounter = True
                     while(teamCounter):
-                        team = random.randint(0,numTeams)
+                        team = random.randint(0,numTeams-1)
+                        print(team)
+                        print(teams)
                         if len(teams[team]) < maxTeam:
-                            teams[team].append(x.Name)
+                            teams[team].append(x.name)
                             teamCounter = False
                 await printTeams(message, teams)
         else:
@@ -36,9 +38,10 @@ async def printTeams(message, teams):
     embed = discord.Embed(
         #title="Command Error",
         color=discord.Color.green())
-    embed.add_field(name="Created Teams",value="Teams were created as folows")
+    embed.add_field(name="Created Teams",value="Teams were created as folows",inline=False)
     counter = 1
     for team in teams:
-        embed.add_field(name="Team" + counter, value="", inline=True)
+        for member in team:
+            embed.add_field(name="Team" + counter, value=member, inline=True)
         counter += 1
     await message.channel.send(embed=embed)
