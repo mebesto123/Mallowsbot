@@ -73,7 +73,7 @@ async def on_message(message):
         await connectionTune.playDisconnection(message.guild.id, message.author, config["DEFAULT"]["path"])
 
     if message.content.lower().startswith("-teams") or message.content.lower().startswith("-newteams"):
-        await Teams.CreateTeams(message,client)
+        await Teams.CreateTeams(message)
     
 # @client.event
 # async def on_reaction_add(reaction, user):   

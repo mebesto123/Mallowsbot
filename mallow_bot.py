@@ -6,8 +6,13 @@ import os
 import configparser
 import connectionTune
 import voicechatlog
+import Teams
 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.members = True
+
+client = discord.Client(intents=intents)
+
 ##Setting For Bot itself
 config = configparser.ConfigParser()
 config.read('.'+ os.path.sep + 'settings'+ os.path.sep + 'botsettings.ini')
@@ -48,6 +53,9 @@ async def on_message(message):
 
     if message.content.lower().startswith("-playdisconnectiontune") or message.content.lower().startswith("-playdisconnection") or message.content.lower().startswith("-outro"):
         await connectionTune.playDisconnection(message.guild.id, message.author, config["DEFAULT"]["path"])
+
+    if message.content.lower().startswith("-teams") or message.content.lower().startswith("-newteams"):
+        await Teams.CreateTeams(message)
     
 # @client.event
 # async def on_reaction_add(reaction, user):   
