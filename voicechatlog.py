@@ -21,13 +21,13 @@ async def writeToVoiceLog(member, before, after):
     move = False
 
     if vc_after != vc_before and vc_after is not None and vc_before is None and member.bot == False:
-        mess += member.name + " has join channel " + vc_after.name
+        mess += member.name + " joined " + vc_after.name
         move = True
     elif vc_after != vc_before and vc_before is not None and vc_after is None and member.bot == False:
-        mess += member.name + " has left channel " + vc_before.name
+        mess += member.name + " left the server"
         move = True
     elif vc_after != vc_before and vc_before is not None and vc_after is not None and member.bot == False:
-        mess += member.name + " moved to channel " + vc_after.name
+        mess += member.name + " moved to  " + vc_after.name
         move = True
 
     if move:
