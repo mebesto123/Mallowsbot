@@ -8,8 +8,12 @@ import configparser
 import drunkphrase
 import connectionTune
 import voicechatlog
+import Teams
 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.members = True
+
+client = discord.Client(intents=intents)
 
 ##Setting For Bot itself
 config = configparser.ConfigParser()
@@ -62,11 +66,14 @@ async def on_message(message):
     if message.content.lower().startswith("-help disconnectiontune") or message.content.lower().startswith("-help mallowsbot"):
         await connectionTune.helpDisconnectionTune(message)
     
-    if message.content.lower().startswith("-testplayconnectiontune") or message.content.lower().startswith("-playconnection"):
+    if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection") or message.content.lower().startswith("-intro"):
         await connectionTune.playConnection(message.guild.id, message.author, config["DEFAULT"]["path"])
 
-    if message.content.lower().startswith("-testplaydisconnectiontune") or message.content.lower().startswith("-playdisconnection"):
+    if message.content.lower().startswith("-playdisconnectiontune") or message.content.lower().startswith("-playdisconnection") or message.content.lower().startswith("-outro"):
         await connectionTune.playDisconnection(message.guild.id, message.author, config["DEFAULT"]["path"])
+
+    if message.content.lower().startswith("-teams") or message.content.lower().startswith("-newteams"):
+        await Teams.CreateTeams(message)
     
 # @client.event
 # async def on_reaction_add(reaction, user):   
