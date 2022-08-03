@@ -1,3 +1,4 @@
+import imp
 import discord
 import pandas as pd
 from time import sleep
@@ -9,6 +10,7 @@ import drunkphrase
 import connectionTune
 import voicechatlog
 import Teams
+from AdminTools import AdminTools
 
 intents = discord.Intents.default()
 intents.members = True
@@ -74,29 +76,40 @@ async def on_message(message):
 
     if message.content.lower().startswith("-teams") or message.content.lower().startswith("-newteams"):
         await Teams.CreateTeams(message)
+
+    # Admin Controls
+    if message.content.lower().startswith("-admin") or message.content.lower().startswith("-help admin"):
+        if any([True for x in message.author.roles if x.permissions.administrator == True]):
+            await AdminTools(message)
+        else:
+            embed = discord.Embed(
+                #title="Command Error",
+                color=discord.Color.red())
+            embed.add_field(name=":no_entry_sign: Permission Denied :no_entry_sign:",value="You need to have Admin or `Add roles here` to use the admin tools.")
+            await message.channel.send(embed=embed)
     
 # @client.event
 # async def on_reaction_add(reaction, user):   
     
-@client.event
-async def on_voice_state_update(member, before, after):
-    path = config["DEFAULT"]["path"] + os.path.sep + 'Video.Audio'
-    vc_before = before.channel
-    vc_after = after.channel
+# @client.event
+# async def on_voice_state_update(member, before, after):
+#     path = config["DEFAULT"]["path"] + os.path.sep + 'Video.Audio'
+#     vc_before = before.channel
+#     vc_after = after.channel
 
-    #Send Voice Channel Log updates
-    await voicechatlog.writeToVoiceLog(member, before, after)
+#     #Send Voice Channel Log updates
+#     await voicechatlog.writeToVoiceLog(member, before, after)
 
-    if vc_after != vc_before and vc_after is not None and member.bot == False:
-        try:
-            await connectionTune.playConnection(member.guild.id, member, config["DEFAULT"]["path"])
-        except discord.errors.ClientException as e:
-            await sendError(member.guild, e)
-    elif vc_after != vc_before and vc_after is None and member.bot == False:
-        try:
-            await connectionTune.playDisconnection(member.guild.id, member, config["DEFAULT"]["path"], before)
-        except discord.errors.ClientException as e:
-            await sendError(member.guild, e)
+#     if vc_after != vc_before and vc_after is not None and member.bot == False:
+#         try:
+#             await connectionTune.playConnection(member.guild.id, member, config["DEFAULT"]["path"])
+#         except discord.errors.ClientException as e:
+#             await sendError(member.guild, e)
+#     elif vc_after != vc_before and vc_after is None and member.bot == False:
+#         try:
+#             await connectionTune.playDisconnection(member.guild.id, member, config["DEFAULT"]["path"], before)
+#         except discord.errors.ClientException as e:
+#             await sendError(member.guild, e)
 
 async def sendError(guild,e):
     botchannel = None
