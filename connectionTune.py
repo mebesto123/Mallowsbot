@@ -69,7 +69,6 @@ async def playDisconnection(guildId, author, repoPath, onDisconnect = None):
     else:
         await playfile(song, author, repoPath)
 
-#TODO: Fix for linux ffmpeg path /usr/bin/ffmpeg
 async def playfile(song, member, repoPath, onDisconnect = None):
     path = repoPath + os.path.sep + 'Video.Audio'
     channel = member.voice.channel if onDisconnect is None else onDisconnect.channel

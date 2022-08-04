@@ -1,12 +1,20 @@
 import discord
+import pandas as pd
+import os
 
 async def AdminTools(message):
 
     cmd = message.content.split(" ", 1 )
 
+    await message.channel.send("Access Granted")
+
     # if message.content.lower().startswith("-help admin") or cmd is None:
     #     await AdminHelp(message)
-
+def adminRolesByGuild(guildId, repoPath):
+    df = pd.read_csv(repoPath + os.path.sep + "GuildAdminRoles.csv")
+    roles = df[(df.Guild == guildId)].Role.tolist()
+    
+    return roles
 
 async def AdminHelp(message):
     embed = discord.Embed(

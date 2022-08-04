@@ -10,7 +10,7 @@ import drunkphrase
 import connectionTune
 import voicechatlog
 import Teams
-from AdminTools import AdminTools
+from AdminTools import AdminTools, adminRolesByGuild
 
 intents = discord.Intents.default()
 intents.members = True
@@ -79,7 +79,7 @@ async def on_message(message):
 
     # Admin Controls
     if message.content.lower().startswith("-admin") or message.content.lower().startswith("-help admin"):
-        if any([True for x in message.author.roles if x.permissions.administrator == True]):
+        if any([True for x in message.author.roles if x.permissions.administrator == True or str(x) in adminRolesByGuild(message.guild.id,config["DEFAULT"]["path"])]) or message.author == message.guild.owner:
             await AdminTools(message)
         else:
             embed = discord.Embed(
