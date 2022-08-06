@@ -90,6 +90,8 @@ async def on_message(message):
     
 # @client.event
 # async def on_reaction_add(reaction, user):   
+#     if user.bot == False:
+
     
 # @client.event
 # async def on_voice_state_update(member, before, after):
