@@ -10,10 +10,11 @@ import drunkphrase
 import connectionTune
 import voicechatlog
 import Teams
-from AdminTools import AdminTools, adminRolesByGuild
+from AdminTools import AdminTools, adminRolesByGuild, AdminRectionConfirms
 
 intents = discord.Intents.default()
 intents.members = True
+intents.reactions = True
 
 client = discord.Client(intents=intents)
 
@@ -88,9 +89,10 @@ async def on_message(message):
             embed.add_field(name=":no_entry_sign: Permission Denied :no_entry_sign:",value="You need to have Admin or `Add roles here` to use the admin tools.")
             await message.channel.send(embed=embed)
     
-# @client.event
-# async def on_reaction_add(reaction, user):   
-#     if user.bot == False:
+@client.event
+async def on_reaction_add(reaction, user):
+    if user.bot == False and len(reaction.message.embeds) > 0:
+        await AdminRectionConfirms(reaction, user)
 
     
 # @client.event
