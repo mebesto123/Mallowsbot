@@ -81,7 +81,7 @@ async def on_message(message):
     # Admin Controls
     if message.content.lower().startswith("-admin") or message.content.lower().startswith("-help admin"):
         if any([True for x in message.author.roles if x.permissions.administrator == True or str(x) in adminRolesByGuild(message.guild.id,config["DEFAULT"]["path"])]) or message.author == message.guild.owner:
-            await AdminTools(message)
+            await AdminTools(message, config["DEFAULT"]["path"])
         else:
             embed = discord.Embed(
                 #title="Command Error",
@@ -92,7 +92,7 @@ async def on_message(message):
 @client.event
 async def on_reaction_add(reaction, user):
     if user.bot == False and len(reaction.message.embeds) > 0:
-        await AdminRectionConfirms(reaction, user)
+        await AdminRectionConfirms(reaction, user, config["DEFAULT"]["path"])
 
     
 # @client.event
