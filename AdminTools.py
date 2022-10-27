@@ -1,9 +1,10 @@
+from re import I
 import discord
 import pandas as pd
 import os
 import EasyErrors
 
-async def AdminTools(message, repoPath):
+async def AdminTools(message, repoPath, client):
 
     cmd = message.content.split(" ", -1 )[1].lower()
 
@@ -11,6 +12,8 @@ async def AdminTools(message, repoPath):
         await addAdminRole(message, repoPath)
     elif cmd == "removerole":
         await removeAdminRole(message, repoPath)
+    # elif cmd == "vcstop":
+    #     await stopMallowsBots(message, repoPath, client)
     # if message.content.lower().startswith("-help admin") or cmd is None:
     #     await AdminHelp(message)
 
@@ -114,3 +117,20 @@ async def confirmRemoveAdminRole(reaction, repoPath):
             await EasyErrors.easyError(reaction.message, "An unhandled Error ooccurred")
     elif reaction.emoji == '🚫':
         await reaction.message.edit(content="Cancelled 🚫")
+
+# TODO: Find way to interupt the mid Connection Tune
+# async def stopMallowsBots(message, repoPath, client):
+#     if CheckClientsVoiceStatus(message, client.user):
+#         await discord.VoiceProtocol(client, message.guild.get_member(client.user.id).voice.channel).disconnect()
+#         await message.channel.send("✅ {0} disconnected successfully".format(client.user))
+#     else:
+#         EasyErrors.easyError("{0} is not connected in any voice channel.".format(client.user))
+
+# def CheckClientsVoiceStatus(message, clientUser):
+#     ##Check is client is in Voice
+#     channels = message.guild.voice_channels
+#     for channel in channels:
+#         for memeber in  [message.guild.get_member(x) for x in list(channel.voice_states.keys())]:
+#             if memeber.id == clientUser.id:
+#                 return True
+#     return False

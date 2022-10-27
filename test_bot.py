@@ -15,6 +15,7 @@ from AdminTools import AdminTools, adminRolesByGuild, AdminRectionConfirms
 intents = discord.Intents.default()
 intents.members = True
 intents.reactions = True
+intents.voice_states = True
 
 client = discord.Client(intents=intents)
 
@@ -81,7 +82,7 @@ async def on_message(message):
     # Admin Controls
     if message.content.lower().startswith("-admin") or message.content.lower().startswith("-help admin"):
         if any([True for x in message.author.roles if x.permissions.administrator == True or str(x) in adminRolesByGuild(message.guild.id,config["DEFAULT"]["path"])]) or message.author == message.guild.owner:
-            await AdminTools(message, config["DEFAULT"]["path"])
+            await AdminTools(message, config["DEFAULT"]["path"], client)
         else:
             embed = discord.Embed(
                 #title="Command Error",
