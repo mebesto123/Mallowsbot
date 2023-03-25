@@ -10,6 +10,11 @@ import Teams
 
 intents = discord.Intents.default()
 intents.members = True
+intents.members = True
+intents.reactions = True
+intents.voice_states = True
+intents.message_content = True
+intents.messages = True
 
 client = discord.Client(intents=intents)
 

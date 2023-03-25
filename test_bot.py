@@ -1,3 +1,4 @@
+import imp
 import discord
 import pandas as pd
 from time import sleep
@@ -9,9 +10,14 @@ import drunkphrase
 import connectionTune
 import voicechatlog
 import Teams
+from AdminTools import AdminTools, adminRolesByGuild, AdminRectionConfirms
 
 intents = discord.Intents.default()
 intents.members = True
+intents.reactions = True
+intents.voice_states = True
+intents.message_content = True
+intents.messages = True
 
 client = discord.Client(intents=intents)
 
@@ -46,11 +52,12 @@ async def on_message(message):
     if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
         await drunkphrase.playDrunkPhrase(message, config["DEFAULT"]["path"])
         
-    # if message.content.lower().startswith("-help drunkphrase"):
-    #     await drunkphrase.helpDrunkPhrase(message)
+    if message.content.lower().startswith("-help drunkphrase"):
+        await drunkphrase.helpDrunkPhrase(message)
     
-    # if message.content.lower().startswith("-playconnectiontune"):
-    #     await playConnection(message)
+    if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection") or message.content.lower().startswith("-intro"):
+        await connectionTune.playConnection(message.guild.id, message.author, config["DEFAULT"]["path"])
+
     if message.content.lower().startswith("-test"):
         await testmethod(message, config["DEFAULT"]["path"])
 
@@ -74,9 +81,23 @@ async def on_message(message):
 
     if message.content.lower().startswith("-teams") or message.content.lower().startswith("-newteams"):
         await Teams.CreateTeams(message)
+
+    # Admin Controls
+    if message.content.lower().startswith("-admin") or message.content.lower().startswith("-help admin"):
+        if any([True for x in message.author.roles if x.permissions.administrator == True or str(x) in adminRolesByGuild(message.guild.id,config["DEFAULT"]["path"])]) or message.author == message.guild.owner:
+            await AdminTools(message, config["DEFAULT"]["path"], client)
+        else:
+            embed = discord.Embed(
+                #title="Command Error",
+                color=discord.Color.red())
+            embed.add_field(name=":no_entry_sign: Permission Denied :no_entry_sign:",value="You need to have Admin or `Add roles here` to use the admin tools.")
+            await message.channel.send(embed=embed)
     
-# @client.event
-# async def on_reaction_add(reaction, user):   
+@client.event
+async def on_reaction_add(reaction, user):
+    if user.bot == False and len(reaction.message.embeds) > 0:
+        await AdminRectionConfirms(reaction, user, config["DEFAULT"]["path"])
+
     
 @client.event
 async def on_voice_state_update(member, before, after):
