@@ -16,6 +16,8 @@ intents = discord.Intents.default()
 intents.members = True
 intents.reactions = True
 intents.voice_states = True
+intents.message_content = True
+intents.messages = True
 
 client = discord.Client(intents=intents)
 
@@ -50,11 +52,12 @@ async def on_message(message):
     if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
         await drunkphrase.playDrunkPhrase(message, config["DEFAULT"]["path"])
         
-    # if message.content.lower().startswith("-help drunkphrase"):
-    #     await drunkphrase.helpDrunkPhrase(message)
+    if message.content.lower().startswith("-help drunkphrase"):
+        await drunkphrase.helpDrunkPhrase(message)
     
-    # if message.content.lower().startswith("-playconnectiontune"):
-    #     await playConnection(message)
+    if message.content.lower().startswith("-playconnectiontune") or message.content.lower().startswith("-playconnection") or message.content.lower().startswith("-intro"):
+        await connectionTune.playConnection(message.guild.id, message.author, config["DEFAULT"]["path"])
+
     if message.content.lower().startswith("-test"):
         await testmethod(message, config["DEFAULT"]["path"])
 
@@ -96,25 +99,25 @@ async def on_reaction_add(reaction, user):
         await AdminRectionConfirms(reaction, user, config["DEFAULT"]["path"])
 
     
-# @client.event
-# async def on_voice_state_update(member, before, after):
-#     path = config["DEFAULT"]["path"] + os.path.sep + 'Video.Audio'
-#     vc_before = before.channel
-#     vc_after = after.channel
+@client.event
+async def on_voice_state_update(member, before, after):
+    path = config["DEFAULT"]["path"] + os.path.sep + 'Video.Audio'
+    vc_before = before.channel
+    vc_after = after.channel
 
-#     #Send Voice Channel Log updates
-#     await voicechatlog.writeToVoiceLog(member, before, after)
+    #Send Voice Channel Log updates
+    await voicechatlog.writeToVoiceLog(member, before, after)
 
-#     if vc_after != vc_before and vc_after is not None and member.bot == False:
-#         try:
-#             await connectionTune.playConnection(member.guild.id, member, config["DEFAULT"]["path"])
-#         except discord.errors.ClientException as e:
-#             await sendError(member.guild, e)
-#     elif vc_after != vc_before and vc_after is None and member.bot == False:
-#         try:
-#             await connectionTune.playDisconnection(member.guild.id, member, config["DEFAULT"]["path"], before)
-#         except discord.errors.ClientException as e:
-#             await sendError(member.guild, e)
+    if vc_after != vc_before and vc_after is not None and member.bot == False:
+        try:
+            await connectionTune.playConnection(member.guild.id, member, config["DEFAULT"]["path"])
+        except discord.errors.ClientException as e:
+            await sendError(member.guild, e)
+    elif vc_after != vc_before and vc_after is None and member.bot == False:
+        try:
+            await connectionTune.playDisconnection(member.guild.id, member, config["DEFAULT"]["path"], before)
+        except discord.errors.ClientException as e:
+            await sendError(member.guild, e)
 
 async def sendError(guild,e):
     botchannel = None
