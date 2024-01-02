@@ -111,7 +111,7 @@ async def on_voice_state_update(member, before, after):
 
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
-
+    await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"])
 
 
     if vc_after != vc_before and vc_after is not None and member.bot == False:

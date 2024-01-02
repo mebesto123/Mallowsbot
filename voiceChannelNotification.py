@@ -3,8 +3,19 @@ import pandas as pd
 import os
 import EasyErrors
 
-async def sendNotifications(member, before, after):
-    1 + 1
+async def sendNotifications(member, before, after, repoPath):
+
+    df = pd.read_csv(repoPath)
+    subs = df[(df.Guild == member.guild.id) & (df.Sub == member.id)]
+
+    vc_before = before.channel
+    vc_after = after.channel
+
+    if vc_after != vc_before and vc_after is not None and vc_before is None and member.bot == False and not subs.empty:
+        for index, row in subs.iterrows():
+            sub = discord.utils.get(member.guild.members, id=row.Member)
+            channel = await sub.create_dm()
+            await channel.send("{} has joined voice on {}".format(member.name, member.guild.name) )
 
 async def setupVoiceChannelSubcriber(message, repoPath, csvFile):
     ms = message.content.split(" ", 1 )[1][1:].split('"', 1 )
@@ -18,7 +29,7 @@ async def setupVoiceChannelSubcriber(message, repoPath, csvFile):
             embed.add_field(name="Error",value="Error using command `-vcsub`: User `" + ms[0] + "` not found. Correct capitalization is required.")
             await message.channel.send(embed=embed)
 
-        if vcCsvReader(message.guild.id, message.author.id, member.id, repoPath + os.path.sep + csvFile):
+        if vcCsvExist(message.guild.id, message.author.id, member.id, repoPath + os.path.sep + csvFile):
             embed = discord.Embed(
                     #title="Command Error",
                     color=discord.Color.red())
@@ -40,7 +51,7 @@ async def setupVoiceChannelSubcriber(message, repoPath, csvFile):
         await message.channel.send(embed=embed)
 
 
-def vcCsvReader(guildId, memberId, subId, repoPath):
+def vcCsvExist(guildId, memberId, subId, repoPath):
     df = pd.read_csv(repoPath)
     exist = df[(df.Guild == guildId) & (df.Member == memberId) & (df.Sub == subId)].Sub
     
