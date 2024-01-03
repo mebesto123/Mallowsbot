@@ -3,6 +3,7 @@ import pandas as pd
 from time import sleep
 import os
 import platform
+from datetime import *
 
 async def helpConnectionTune(message):
     embed = discord.Embed(
@@ -55,13 +56,15 @@ def updateSong(guildId, memberId, songname, repoPath):
         df.to_csv(repoPath, index=False)
 
 async def playConnection(guildId, author, repoPath):
-    song = audioReader(guildId, author.id, repoPath + os.path.sep + "DiscordVoiceUsers.csv")
+    fileName = "DiscordVoiceUsers.csv" if date(2024,4,1) != date.today() else "DisconnectionVoiceUsers.csv"
+    song = audioReader(guildId, author.id, repoPath + os.path.sep + fileName)
     if song == 'False':
         song = "teamspeak2.mp3"
     await playfile(song, author, repoPath)
 
 async def playDisconnection(guildId, author, repoPath, onDisconnect = None):
-    song = audioReader(guildId, author.id, repoPath + os.path.sep + "DisconnectionVoiceUsers.csv")
+    fileName = "DisconnectionVoiceUsers.csv" if date(2024,4,1) != date.today() else "DiscordVoiceUsers.csv"
+    song = audioReader(guildId, author.id, repoPath + os.path.sep + fileName)
     if song == 'False':
         song = "Userdisconnected.mp3"
     if onDisconnect is not None:
