@@ -53,6 +53,9 @@ async def on_message(message):
     if message.content.lower().startswith("-vcsub"):
         await voiceChannelNotification.setupVoiceChannelSubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
 
+    if message.content.lower().startswith("-vcunsub"):
+        await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
+
     if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
         await drunkphrase.playDrunkPhrase(message, config["DEFAULT"]["path"])
         

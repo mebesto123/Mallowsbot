@@ -18,36 +18,64 @@ async def sendNotifications(member, before, after, repoPath):
             await channel.send("{} has joined voice on {}".format(member.name, member.guild.name) )
 
 async def setupVoiceChannelSubcriber(message, repoPath, csvFile):
-    ms = message.content.split(" ", 1 )[1][1:].split('"', 1 )
-    if len(ms) > 1:
-        member = discord.utils.get(message.guild.members, name=ms[0])
+    ms = message.content.split(" ")
+    if len(ms) > 1 :
+        member = discord.utils.get(message.guild.members, name=ms[1])
 
         if member is None:
             embed = discord.Embed(
                     #title="Command Error",
                     color=discord.Color.red())
-            embed.add_field(name="Error",value="Error using command `-vcsub`: User `" + ms[0] + "` not found. Correct capitalization is required.")
+            embed.add_field(name="Error",value="Error using command `-vcsub`: User `" + ms[1] + "` not found. Correct capitalization is required.")
             await message.channel.send(embed=embed)
-
-        if vcCsvExist(message.guild.id, message.author.id, member.id, repoPath + os.path.sep + csvFile):
+        elif vcCsvExist(message.guild.id, message.author.id, member.id, repoPath + os.path.sep + csvFile):
             embed = discord.Embed(
                     #title="Command Error",
                     color=discord.Color.red())
-            embed.add_field(name="Error",value="Error using command `-vcsub`: You already subcribed to User `" + ms[0] + "`.")
+            embed.add_field(name="Error",value="Error using command `-vcsub`: You already subcribed to User `" + ms[1] + "`.")
             await message.channel.send(embed=embed)
+        else:
+            df = pd.read_csv(repoPath + os.path.sep + csvFile)
+            temp = {"Guild": message.guild.id,"Member": message.author.id, "Sub": member.id}
+            df = df.append(temp, ignore_index=True)
+            df.to_csv(repoPath + os.path.sep + csvFile, index=False)
 
-        df = pd.read_csv(repoPath + os.path.sep + csvFile)
-        temp = {"Guild": message.guild.id,"Member": message.author.id, "Sub": member.id}
-        df = df.append(temp, ignore_index=True)
-        df.to_csv(repoPath + os.path.sep + csvFile, index=False)
-
-        await message.channel.send(":white_check_mark: " + message.author.name + " has subcribed to " + ms[0] + "!!" )
-            
+            await message.channel.send(":white_check_mark: " + message.author.name + " has subcribed to " + ms[1] + "!!" )
     else:
         embed = discord.Embed(
                 #title="Command Error",
                 color=discord.Color.red())
-        embed.add_field(name="Error",value="Error using command `-vcsub`: You must use double quotes for user names `\"example_user_name\"`")
+        embed.add_field(name="Error",value="Error using command `-vcsub`: No User name supplied")
+        await message.channel.send(embed=embed)
+
+async def setupVoiceChannelUnsubcriber(message, repoPath, csvFile):
+    ms = message.content.split(" ")
+    if len(ms) > 1 :
+        member = discord.utils.get(message.guild.members, name=ms[1])
+
+        if member is None:
+            embed = discord.Embed(
+                    #title="Command Error",
+                    color=discord.Color.red())
+            embed.add_field(name="Error",value="Error using command `-vcunsub`: User `" + ms[1] + "` not found. Correct capitalization is required.")
+            await message.channel.send(embed=embed)
+        elif not vcCsvExist(message.guild.id, message.author.id, member.id, repoPath + os.path.sep + csvFile):
+            embed = discord.Embed(
+                    #title="Command Error",
+                    color=discord.Color.red())
+            embed.add_field(name="Error",value="Error using command `-vcunsub`: You are not subcribed to User `" + ms[1] + "`.")
+            await message.channel.send(embed=embed)
+        else:
+            df = pd.read_csv(repoPath + os.path.sep + csvFile)
+            df = df.drop(df[(df.Guild == message.guild.id) & (df.Member == message.author.id) & (df.Sub == member.id)].index)
+            df.to_csv(repoPath + os.path.sep + csvFile, index=False)
+
+            await message.channel.send(":white_check_mark: " + message.author.name + " has unsubcribed to " + ms[1] + "!!" )
+    else:
+        embed = discord.Embed(
+                #title="Command Error",
+                color=discord.Color.red())
+        embed.add_field(name="Error",value="Error using command `-vcunsub`: No User name supplied")
         await message.channel.send(embed=embed)
 
 
