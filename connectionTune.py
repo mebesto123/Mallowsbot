@@ -75,6 +75,8 @@ async def playDisconnection(guildId, author, repoPath, onDisconnect = None):
 async def playfile(song, member, repoPath, onDisconnect = None):
     path = repoPath + os.path.sep + 'Video.Audio'
     channel = member.voice.channel if onDisconnect is None else onDisconnect.channel
+    
+    song = "Itsmybirthday.mp3" if date(date.today().year,1,18) == date.today() else song
     if (member.voice is not None or onDisconnect is not None) and member.bot == False:
         vc = await channel.connect()
         path += os.path.sep + song
