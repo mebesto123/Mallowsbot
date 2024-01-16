@@ -7,6 +7,7 @@ import configparser
 import connectionTune
 import voicechatlog
 import Teams
+import voiceChannelNotification
 
 intents = discord.Intents.default()
 intents.members = True
@@ -40,6 +41,11 @@ async def on_message(message):
     #User name comes in like <@!#######>
     #also there is Get_All_Members
     #print("Author: ",message.author," Message: ",message.content)
+    if message.content.lower().startswith("-vcsub"):
+        await voiceChannelNotification.setupVoiceChannelSubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
+
+    if message.content.lower().startswith("-vcunsub"):
+        await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"])
     
     if message.content.lower().startswith("-connectiontune"):
         await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["connectioncsv"])
@@ -73,6 +79,7 @@ async def on_voice_state_update(member, before, after):
 
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
+    await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"])
 
     if vc_after != vc_before and vc_after is not None and member.bot == False:
         try:

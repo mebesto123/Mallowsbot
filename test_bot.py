@@ -10,6 +10,7 @@ import drunkphrase
 import connectionTune
 import voicechatlog
 import Teams
+import voiceChannelNotification
 from AdminTools import AdminTools, adminRolesByGuild, AdminRectionConfirms
 
 intents = discord.Intents.default()
@@ -48,7 +49,13 @@ async def on_message(message):
     
     # if message.content.lower().startswith("-drunkphrase add"):
     #     await drunkphrase.addDrunkPhrase(message)
-        
+
+    if message.content.lower().startswith("-vcsub"):
+        await voiceChannelNotification.setupVoiceChannelSubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
+
+    if message.content.lower().startswith("-vcunsub"):
+        await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
+
     if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
         await drunkphrase.playDrunkPhrase(message, config["DEFAULT"]["path"])
         
@@ -107,6 +114,8 @@ async def on_voice_state_update(member, before, after):
 
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
+    await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"])
+
 
     if vc_after != vc_before and vc_after is not None and member.bot == False:
         try:

@@ -3,6 +3,7 @@ import pandas as pd
 from time import sleep
 import os
 import platform
+from datetime import *
 
 async def helpConnectionTune(message):
     embed = discord.Embed(
@@ -55,13 +56,15 @@ def updateSong(guildId, memberId, songname, repoPath):
         df.to_csv(repoPath, index=False)
 
 async def playConnection(guildId, author, repoPath):
-    song = audioReader(guildId, author.id, repoPath + os.path.sep + "DiscordVoiceUsers.csv")
+    fileName = "DiscordVoiceUsers.csv" if date(2024,4,1) != date.today() else "DisconnectionVoiceUsers.csv"
+    song = audioReader(guildId, author.id, repoPath + os.path.sep + fileName)
     if song == 'False':
         song = "teamspeak2.mp3"
     await playfile(song, author, repoPath)
 
 async def playDisconnection(guildId, author, repoPath, onDisconnect = None):
-    song = audioReader(guildId, author.id, repoPath + os.path.sep + "DisconnectionVoiceUsers.csv")
+    fileName = "DisconnectionVoiceUsers.csv" if date(2024,4,1) != date.today() else "DiscordVoiceUsers.csv"
+    song = audioReader(guildId, author.id, repoPath + os.path.sep + fileName)
     if song == 'False':
         song = "Userdisconnected.mp3"
     if onDisconnect is not None:
@@ -72,11 +75,13 @@ async def playDisconnection(guildId, author, repoPath, onDisconnect = None):
 async def playfile(song, member, repoPath, onDisconnect = None):
     path = repoPath + os.path.sep + 'Video.Audio'
     channel = member.voice.channel if onDisconnect is None else onDisconnect.channel
+    
+    song = "Itsmybirthday.mp3" if date(date.today().year,1,18) == date.today() else song
     if (member.voice is not None or onDisconnect is not None) and member.bot == False:
         vc = await channel.connect()
         path += os.path.sep + song
-        exe = 'ffmpeg.exe' if platform.system() == 'Windows' else 'ffmpeg'
-        vc.play(discord.FFmpegPCMAudio(path, executable= repoPath + os.path.sep + "ffmpeg" + os.path.sep + "bin" + os.path.sep + exe))
+        exe = repoPath + os.path.sep + "ffmpeg" + os.path.sep + "bin" + os.path.sep + 'ffmpeg.exe' if platform.system() == 'Windows' else '/usr/bin/ffmpeg'
+        vc.play(discord.FFmpegPCMAudio(path, executable= exe))
         while vc.is_playing():
             #Start Playing
             sleep(.1)            
