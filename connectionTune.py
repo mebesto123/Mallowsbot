@@ -19,11 +19,11 @@ async def helpDisconnectionTune(message):
     embed.add_field(name="-disconnectiontune",value="Use this command like `-disconnectiontune` and upload your tune in the same message. Mallows Bot can play most file types but if your file type is not playing change to one of these file types `.mp3`, `.ogg`, or `.m4a`")
     await message.channel.send(embed=embed)
 
-async def createConnectionTune(message, repoPath, csvFile):
+async def createConnectionTune(message, repoPath, csvFile, type):
     if len(message.attachments) == 1:
         file = message.attachments[0]
         path = repoPath + os.path.sep + "Video.Audio"
-        filename = str(message.author.id) + str(message.guild.id) + "Tune" + file.filename[file.filename.rfind("."):]
+        filename = str(message.author.id) + str(message.guild.id) + type + file.filename[file.filename.rfind("."):]
         await file.save(os.path.join(path,filename))
         updateSong(message.guild.id,message.author.id,filename, repoPath + os.path.sep + csvFile)
         await message.channel.send(":white_check_mark: " + message.author.name + " has updated their Connection Tune!!" )

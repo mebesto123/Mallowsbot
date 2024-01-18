@@ -48,10 +48,10 @@ async def on_message(message):
         await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"])
     
     if message.content.lower().startswith("-connectiontune"):
-        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["connectioncsv"])
+        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["connectioncsv"], "con")
 
     if message.content.lower().startswith("-disconnectiontune"):
-        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["disconnectioncsv"])
+        await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["disconnectioncsv"], "dis")
 
     if message.content.lower().startswith("-help connectiontune") or message.content.lower().startswith("-help mallowsbot"):
         await connectionTune.helpConnectionTune(message)
