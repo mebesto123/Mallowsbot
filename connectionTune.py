@@ -101,12 +101,12 @@ def specialDate(repoPath):
                      (df["Day"].astype(int) == date.today().day) &
                      (df["IsActive"].astype(int) == 1), ['Song'] ].to_numpy()
     
-    print(dataDf)
+    song = 'False'
     if len(dataDf) > 0:
             songList = np.concatenate(dataDf).ravel().tolist()
             song = songList[random.randint(0,len(songList)-1)]
 
-    if song.empty:
+    if song == 'False':
         return 'False'
     
-    return song.values[0]
+    return song
