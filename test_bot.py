@@ -146,7 +146,7 @@ async def sendError(guild,e):
     await botchannel.send(embed=embed)
 
 async def testmethod(message, repoPath):
-    await message.channel.send("Mallow")
+    await connectionTune.playDisconnection(message.guild.id, message.author, config["DEFAULT"]["path"])
     
 client.run(config["KEY"]["testclientkey"])
 

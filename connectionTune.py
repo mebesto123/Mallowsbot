@@ -4,6 +4,8 @@ from time import sleep
 import os
 import platform
 from datetime import *
+import random
+import numpy as np
 
 async def helpConnectionTune(message):
     embed = discord.Embed(
@@ -91,7 +93,18 @@ async def playfile(song, member, repoPath, onDisconnect = None):
 
 def specialDate(repoPath):
     df = pd.read_csv(repoPath + os.path.sep + "SpecialDates.csv")
-    song = df["Date":str(date.today())].Song
+    df.loc[df["Year"] == "****", "Year"] = str(date.today().year)
+    df.loc[df["Month"] == "**", "Month"] = str(date.today().month)
+    df.loc[df["Day"] == "**", "Day"] = str(date.today().day)
+    dataDf = df.loc[(df["Year"].astype(int) == date.today().year) &
+                     (df["Month"].astype(int) == date.today().month) &
+                     (df["Day"].astype(int) == date.today().day) &
+                     (df["IsActive"].astype(int) == 1), ['Song'] ].to_numpy()
+    
+    print(dataDf)
+    if len(dataDf) > 0:
+            songList = np.concatenate(dataDf).ravel().tolist()
+            song = songList[random.randint(0,len(songList)-1)]
 
     if song.empty:
         return 'False'
