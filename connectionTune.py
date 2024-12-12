@@ -4,6 +4,8 @@ from time import sleep
 import os
 import platform
 from datetime import *
+import random
+import numpy as np
 
 async def helpConnectionTune(message):
     embed = discord.Embed(
@@ -76,7 +78,9 @@ async def playfile(song, member, repoPath, onDisconnect = None):
     path = repoPath + os.path.sep + 'Video.Audio'
     channel = member.voice.channel if onDisconnect is None else onDisconnect.channel
     
-    song = "Itsmybirthday.mp3" if date(date.today().year,1,18) == date.today() else song
+    special = specialDate(repoPath)
+
+    song = special if special != 'False' else song
     if (member.voice is not None or onDisconnect is not None) and member.bot == False:
         vc = await channel.connect()
         path += os.path.sep + song
@@ -86,3 +90,23 @@ async def playfile(song, member, repoPath, onDisconnect = None):
             #Start Playing
             sleep(.1)            
         await vc.disconnect()
+
+def specialDate(repoPath):
+    df = pd.read_csv(repoPath + os.path.sep + "SpecialDates.csv")
+    df.loc[df["Year"] == "****", "Year"] = str(date.today().year)
+    df.loc[df["Month"] == "**", "Month"] = str(date.today().month)
+    df.loc[df["Day"] == "**", "Day"] = str(date.today().day)
+    dataDf = df.loc[(df["Year"].astype(int) == date.today().year) &
+                     (df["Month"].astype(int) == date.today().month) &
+                     (df["Day"].astype(int) == date.today().day) &
+                     (df["IsActive"].astype(int) == 1), ['Song'] ].to_numpy()
+    
+    song = 'False'
+    if len(dataDf) > 0:
+            songList = np.concatenate(dataDf).ravel().tolist()
+            song = songList[random.randint(0,len(songList)-1)]
+
+    if song == 'False':
+        return 'False'
+    
+    return song
