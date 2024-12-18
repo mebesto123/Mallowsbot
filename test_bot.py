@@ -12,6 +12,7 @@ import voicechatlog
 import Teams
 import voiceChannelNotification
 from AdminTools import AdminTools, adminRolesByGuild, AdminRectionConfirms
+from EmailSender import EmailSender
 
 intents = discord.Intents.default()
 intents.members = True
@@ -25,6 +26,13 @@ client = discord.Client(intents=intents)
 ##Setting For Bot itself
 config = configparser.ConfigParser()
 config.read('.'+ os.path.sep + 'settings'+ os.path.sep + 'botsettings.ini')
+
+##Email Setup
+emailSender = EmailSender(config['EmailServer']['smtpserver'],
+                          config['EmailServer']['port'],
+                          config['EmailServer']['email'],
+                          config['EmailServer']['password'],
+                          config["DEFAULT"]["path"] + os.path.sep + config['EmailServer']['listpath'])
 
 @client.event
 async def on_ready():
