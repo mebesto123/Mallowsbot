@@ -96,7 +96,13 @@ async def on_message(message):
 
     if message.content.lower().startswith("-teams") or message.content.lower().startswith("-newteams"):
         await Teams.CreateTeams(message)
-
+        
+    if message.content.lower().startswith("-addtoemaillist"):
+        await emailSender.addToList(message)
+        
+    if message.content.lower().startswith("-email") or message.content.lower().startswith("-sendemail"):
+        await emailSender.emailUser(message)
+        
     # Admin Controls
     if message.content.lower().startswith("-admin") or message.content.lower().startswith("-help admin"):
         if any([True for x in message.author.roles if x.permissions.administrator == True or str(x) in adminRolesByGuild(message.guild.id,config["DEFAULT"]["path"])]) or message.author == message.guild.owner:
