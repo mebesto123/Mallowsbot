@@ -118,6 +118,16 @@ async def confirmRemoveAdminRole(reaction, repoPath):
     elif reaction.emoji == '🚫':
         await reaction.message.edit(content="Cancelled 🚫")
 
+
+async def checkRole(guild: discord.Guild ,user: discord.User, roleName: str):
+    role: discord.Role = [x for x in guild.roles if x.name.lower() == roleName.lower()][0]
+    member  = [x for x in role.members if x.id == user.id][0]
+    if member is not None:
+        return True
+    else:
+        return False
+    
+    
 # TODO: Find way to interupt the mid Connection Tune
 # async def stopMallowsBots(message, repoPath, client):
 #     if CheckClientsVoiceStatus(message, client.user):

@@ -7,6 +7,7 @@ import smtplib
 import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import AdminTools
 
 class EmailSender:
      def __init__(self, smtp_server, port, sender_email, sender_password, dist_list_path):
@@ -52,21 +53,26 @@ class EmailSender:
 
      #-email name message 
      async def emailUser(self, message: discord.Message):
-          
-          try:
-               ms = message.content.split('"')
-               name = ms[0].split(" ")[1]
-               text = ms[1]
-               guildId = message.guild.id
-               email = self.getEmail(name, guildId)
-               self.__sendEmail(text, email, message.author.name)
-               
-               await message.channel.send(":white_check_mark: Email to " + name + " was successfully sent!!" )
-               
-          except:
+          if await AdminTools.checkRole(message.guild ,message.author, "Email User"):
+               try:
+                    ms = message.content.split('"')
+                    name = ms[0].split(" ")[1]
+                    text = ms[1]
+                    guildId = message.guild.id
+                    email = self.getEmail(name, guildId)
+                    self.__sendEmail(text, email, message.author.name)
+                    
+                    await message.channel.send(":white_check_mark: Email to " + name + " was successfully sent!!" )
+                    
+               except:
+                    embed = discord.Embed(
+                              color=discord.Color.red())
+                    embed.add_field(name="Error",value="Error using command `-email`: parameter should be as followed: `-email name \"message\"`")
+                    await message.channel.send(embed=embed)
+          else:
                embed = discord.Embed(
                          color=discord.Color.red())
-               embed.add_field(name="Error",value="Error using command `-email`: parameter should be as followed: `-email name \"message\"`")
+               embed.add_field(name="Error",value=" 🚫 You are not Authorized to use this command. Ask you admin for access 🚫")
                await message.channel.send(embed=embed)
                
      #-showlist     
