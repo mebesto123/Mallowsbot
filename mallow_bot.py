@@ -8,6 +8,7 @@ import connectionTune
 import voicechatlog
 import Teams
 import voiceChannelNotification
+from EmailSender import EmailSender
 
 intents = discord.Intents.default()
 intents.members = True
@@ -21,7 +22,14 @@ client = discord.Client(intents=intents)
 
 ##Setting For Bot itself
 config = configparser.ConfigParser()
-config.read('.'+ os.path.sep + 'settings'+ os.path.sep + 'botsettings.ini')
+config.read('.'+ os.path.sep + 'settings'+ os.path.sep + 'botsettings.ini') 
+
+##Email Setup
+emailSender = EmailSender(config['EmailServer']['smtpserver'],
+                          config['EmailServer']['port'],
+                          config['EmailServer']['email'],
+                          config['EmailServer']['password'],
+                          config["DEFAULT"]["path"] + os.path.sep + config['EmailServer']['listpath'])
 
 @client.event
 async def on_ready():
@@ -67,6 +75,15 @@ async def on_message(message):
 
     if message.content.lower().startswith("-teams") or message.content.lower().startswith("-newteams"):
         await Teams.CreateTeams(message)
+    
+    if message.content.lower().startswith("-addtoemaillist"):
+        await emailSender.addToList(message)
+        
+    if message.content.lower().startswith("-showemaillist"):
+        await emailSender.showList(message)
+        
+    if message.content.lower().startswith("-email") or message.content.lower().startswith("-sendemail"):
+        await emailSender.emailUser(message)
     
 # @client.event
 # async def on_reaction_add(reaction, user):   
