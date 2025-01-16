@@ -77,43 +77,55 @@ class EmailSender:
                
      #-showlist     
      async def showList(self, message: discord.Message):
-          df: pd.DataFrame = pd.read_csv(self.distListPath)
-          embed = discord.Embed(
-                    color=discord.Color.blurple())
-          embed.add_field(name="List",value="List of users below")
-          count = 1
-          for item in df:
-               embed.add_field(name=count,value="Name: " + item.Name + " Email ")
-               count += 1
-          await message.channel.send(embed=embed)
-
-     #-addtoemaillist Name email
-     async def addToList(self, message: discord.Message):
-          ms = message.content.split(" ")
-          if len(ms) == 3 :
-               name = ms[1]
-               email = ms[2]
-               email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-
-               if not re.match(email_regex, email):
-                    embed = discord.Embed(
-                              color=discord.Color.red())
-                    embed.add_field(name="Error",value="Error using command `-addtoemaillist`: Email `" + email + "` is not vaild.")
-                    await message.channel.send(embed=embed) 
-               else:
-                    df: pd.DataFrame = pd.read_csv(self.distListPath)
-                    exist = df[(df.Guild == message.guild.id) & (df.Name == name)].index
-                    if exist.empty:
-                         temp = {"Guild": message.guild.id,"Name": name, "Email": email, "Delay": datetime.now() + timedelta(hours=-1)}
-                         df = df.append(temp, ignore_index=True)
-                    else: 
-                         df.at[exist[0],"Email"] = email
-                         df.at[exist[0],"Delay"] = datetime.now() + timedelta(hours=-1)     
-                    df.to_csv(self.distListPath, index=False)
-
-                    await message.channel.send(":white_check_mark: " + name + " with email " + email +  " was added!!" )
+          if await AdminTools.checkRole(message.guild ,message.author, "Email User"):
+               df: pd.DataFrame = pd.read_csv(self.distListPath)
+               embed = discord.Embed(
+                         color=discord.Color.blurple())
+               embed.add_field(name="List",value="List of users below")
+               count = 1
+               for item in df:
+                    embed.add_field(name=count,value="Name: " + item.Name + " Email ")
+                    count += 1
+               await message.channel.send(embed=embed)
           else:
                embed = discord.Embed(
                          color=discord.Color.red())
-               embed.add_field(name="Error",value="Error using command `-addtoemaillist`: parameter should be as followed: `-addtoemaillist Name email`")
+               embed.add_field(name="Error",value=" 🚫 You are not Authorized to use this command. Ask you admin for access 🚫")
+               await message.channel.send(embed=embed)
+
+     #-addtoemaillist Name email
+     async def addToList(self, message: discord.Message):
+          if await AdminTools.checkRole(message.guild ,message.author, "Email User"):
+               ms = message.content.split(" ")
+               if len(ms) == 3 :
+                    name = ms[1]
+                    email = ms[2]
+                    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+                    if not re.match(email_regex, email):
+                         embed = discord.Embed(
+                                   color=discord.Color.red())
+                         embed.add_field(name="Error",value="Error using command `-addtoemaillist`: Email `" + email + "` is not vaild.")
+                         await message.channel.send(embed=embed) 
+                    else:
+                         df: pd.DataFrame = pd.read_csv(self.distListPath)
+                         exist = df[(df.Guild == message.guild.id) & (df.Name == name)].index
+                         if exist.empty:
+                              temp = {"Guild": message.guild.id,"Name": name, "Email": email, "Delay": datetime.now() + timedelta(hours=-1)}
+                              df = df.append(temp, ignore_index=True)
+                         else: 
+                              df.at[exist[0],"Email"] = email
+                              df.at[exist[0],"Delay"] = datetime.now() + timedelta(hours=-1)     
+                         df.to_csv(self.distListPath, index=False)
+
+                         await message.channel.send(":white_check_mark: " + name + " with email " + email +  " was added!!" )
+               else:
+                    embed = discord.Embed(
+                              color=discord.Color.red())
+                    embed.add_field(name="Error",value="Error using command `-addtoemaillist`: parameter should be as followed: `-addtoemaillist Name email`")
+                    await message.channel.send(embed=embed)
+          else:
+               embed = discord.Embed(
+                         color=discord.Color.red())
+               embed.add_field(name="Error",value=" 🚫 You are not Authorized to use this command. Ask you admin for access 🚫")
                await message.channel.send(embed=embed)
