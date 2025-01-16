@@ -100,6 +100,9 @@ async def on_message(message):
     if message.content.lower().startswith("-addtoemaillist"):
         await emailSender.addToList(message)
         
+    if message.content.lower().startswith("-showemaillist"):
+        await emailSender.showList(message)
+        
     if message.content.lower().startswith("-email") or message.content.lower().startswith("-sendemail"):
         await emailSender.emailUser(message)
         
