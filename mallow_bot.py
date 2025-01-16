@@ -24,6 +24,7 @@ client = discord.Client(intents=intents)
 config = configparser.ConfigParser()
 config.read('.'+ os.path.sep + 'settings'+ os.path.sep + 'botsettings.ini') 
 
+##Email Setup
 emailSender = EmailSender(config['EmailServer']['smtpserver'],
                           config['EmailServer']['port'],
                           config['EmailServer']['email'],

@@ -1,12 +1,8 @@
 import discord
 from datetime import *
-import random
-import numpy as np
 import pandas as pd
 import smtplib
 import re
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import AdminTools
 
 class EmailSender:
@@ -64,7 +60,7 @@ class EmailSender:
                     
                     await message.channel.send(":white_check_mark: Email to " + name + " was successfully sent!!" )
                     
-               except:
+               except Exception as e:
                     embed = discord.Embed(
                               color=discord.Color.red())
                     embed.add_field(name="Error",value="Error using command `-email`: parameter should be as followed: `-email name \"message\"`")
