@@ -114,7 +114,7 @@ class EmailSender:
                               df.at[exist[0],"Delay"] = datetime.now() + timedelta(hours=-1)     
                          df.to_csv(self.distListPath, index=False)
 
-                         await message.channel.send(":white_check_mark: " + name + " with email " + email +  " was added!!" )
+                         await message.channel.send(":white_check_mark: " + name + " was added!!" )
                else:
                     embed = discord.Embed(
                               color=discord.Color.red())
