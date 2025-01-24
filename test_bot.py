@@ -1,4 +1,3 @@
-import imp
 import discord
 import pandas as pd
 from time import sleep
@@ -63,6 +62,9 @@ async def on_message(message):
 
     if message.content.lower().startswith("-vcunsub"):
         await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
+        
+    if message.content.lower().startswith("-setupcampfire"):
+        await voiceChannelNotification.setupCampfire(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelcampfirecsv"])     
 
     if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
         await drunkphrase.playDrunkPhrase(message, config["DEFAULT"]["path"])
@@ -132,6 +134,7 @@ async def on_voice_state_update(member, before, after):
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
     await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"])
+    await voiceChannelNotification.sendCampfire(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelcampfirecsv"])
 
 
     if vc_after != vc_before and vc_after is not None and member.bot == False:
