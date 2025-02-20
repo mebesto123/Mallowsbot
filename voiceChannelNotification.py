@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import EasyErrors
 from datetime import *
+import sqlite3
 
 
 async def sendNotifications(member, before, after, repoPath):
@@ -80,32 +81,60 @@ async def setupVoiceChannelUnsubcriber(message, repoPath, csvFile):
         embed.add_field(name="Error",value="Error using command `-vcunsub`: No User name supplied")
         await message.channel.send(embed=embed)
         
-async def sendCampfire(member, before, after, repoPath):
+async def helpCampfire(message: discord.Message):
+    embed = discord.Embed(
+            color=discord.Color.blurple())
+    embed.add_field(name="Campfire Setup Help",value=f"""Mallows bot campfire is a way to send a message when a user joins a specific channel. Basic use: `-setupcampfire [action] “[channel]” “[message]” [durationHour=3hr]`. The channel needs to be a voice channel on the server.
+                    Add Action
+                    `add` or `new` Action is used to start a new campfire.
+                    
+                    Update Action
+                    `update` or `edit` Action is used to update a campfire. If there is no campfire active, this command will act as an add action
+                    
+                    Delete Action
+                    `delete` or `end` Action is used to end a campfire.
+                    """)
+    await message.channel.send(embed=embed)
+        
+async def sendCampfire(member: discord.Member, before, after, sqldb):
     vc_before = before.channel
     vc_after = after.channel
     
-    df = pd.read_csv(repoPath)
-    message = df[(df.Guild == member.guild.id) & (df.Channel == vc_after)]
-    if message.empty:
+    if vc_after is None:
+        return "False"
+    
+    sqliteConnection = sqlite3.connect(sqldb)
+    cursor: sqlite3.Cursor = sqliteConnection.cursor()
+    
+    cursor.execute('''
+                        SELECT * FROM camfire 
+                        WHERE guild = ? 
+                        AND channel = ? 
+                    ''', (member.guild.id, vc_after.name))
+    
+    row = cursor.fetchone()
+    
+    if row is None:
         return 'False'
     
     #1234567890123456789
     #2025-01-08 20:25:04.625175
-    strTime = df.at[message.index[0],"EndTime"]
+    strTime = row['endTime']
     timer = datetime.strptime(strTime[0:19], "%Y-%m-%d %H:%M:%S")
     if timer > datetime.now():
-        df.drop(message.index[0])
-        df.to_csv(repoPath, index=False)
+        cleanUpCamfire(sqliteConnection, cursor, member.guild.id)
         return 'False'
 
-    if vc_after != vc_before and vc_after is not None and vc_before is None and member.bot == False and not message.empty:
+    if vc_after != vc_before and vc_after is not None and vc_before is None and member.bot == False:
         sub = discord.utils.get(member.guild.members, id=member.id)
         channel = await sub.create_dm()
-        await channel.send(message.Message)
+        await channel.send(row['message'])
         
-async def setupCampfire(message: discord.Message, repoPath, csvFile):
+async def setupCampfire(message: discord.Message, sqldb: str):
     #-setupcampfire action "channel" "message" durationHour=3hr
-    path = repoPath + os.path.sep + csvFile
+    sqliteConnection = sqlite3.connect(sqldb)
+    cursor: sqlite3.Cursor = sqliteConnection.cursor()
+    cleanUpCamfire(sqliteConnection, cursor, message.guild.id)
     msParSplit = message.content.split('"')
     msSpSplit = message.content.split(' ')
     if len(msSpSplit) >= 3:
@@ -114,48 +143,80 @@ async def setupCampfire(message: discord.Message, repoPath, csvFile):
             channel = msParSplit[1]
             id = channelCheck(message, channel)
             if id is not None:
-                df: pd.DataFrame = pd.read_csv(path)
-                notes: pd.DataFrame = df[(df.Guild == message.guild.id) & (df.Channel == id) & (datetime.strptime(notes.EndTime, "%Y-%m-%d %H:%M:%S") < datetime.now().__format__("%Y-%m-%d %H:%M:%S"))]
-                df = df[(datetime.strptime(df.EndTime, "%Y-%m-%d %H:%M:%S") > datetime.now().__format__("%Y-%m-%d %H:%M:%S"))]
-                df.to_csv(path, index=False)
+                endTime = campfireInUseCheck(cursor, message.guild.id, channel)
+                if endTime is None:
+                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
+                    saveTime = str(datetime.now() + timedelta(hours=t)) 
+                    cursor.execute('''
+                        INSERT INTO users (guild, channel, message, endTime) 
+                        VALUES (?, ?, ?)
+                    ''', (message.guild.id, message.channel.id, msParSplit[3], saveTime))
                     
-                if notes.empty:
-                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3 
-                    temp = {"Guild": message.guild.id,"Channel": message.channel.id,"Message": msParSplit[3], "EndTime": datetime.now() + timedelta(hours=t)}
-                    df = df.append(temp, ignore_index=True)
-                    df.to_csv(path, index=False)
                     embed = discord.Embed(
                             color=discord.Color.blurple())
-                    embed.add_field(name="Add Message for Channel",value=":white_check_mark: Voice Channel is in use. It will free up at " + notes["EndTime"].iloc[0])
+                    embed.add_field(name="Added Message for Channel",value=f":white_check_mark: Message will now send on join to {message.channel.name}. It will free up at " + saveTime)
                     await message.channel.send(embed=embed)
                 else:
                     embed = discord.Embed(
                             color=discord.Color.red())
-                    embed.add_field(name="Channel in Use",value="Voice Channel is in use. It will free up at " + notes["EndTime"].iloc[0])
+                    embed.add_field(name="Channel in Use",value="Voice Channel is in use. It will free up at " + endTime)
                     await message.channel.send(embed=embed)
             
         if action.lower() == "edit" or  action.lower() == "update" and len(msSpSplit) > 3 and len(msSpSplit) >= 4:
             channel = msParSplit[1]
             id = channelCheck(message, channel)
             if id is not None:
-                df: pd.DataFrame = pd.read_csv(path)
-                notes: pd.DataFrame = df[(df.Guild == message.guild.id) & (df.Channel == id) & (datetime.strptime(notes.EndTime, "%Y-%m-%d %H:%M:%S") < datetime.now().__format__("%Y-%m-%d %H:%M:%S"))]
-                df = df[(datetime.strptime(df.EndTime, "%Y-%m-%d %H:%M:%S") > datetime.now().__format__("%Y-%m-%d %H:%M:%S"))]
-                df.to_csv(path, index=False)
+                endTime = campfireInUseCheck(cursor, message.guild.id, channel)
+                if endTime is not None:
+                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
+                    saveTime = str(datetime.now() + timedelta(hours=t)) 
+                    cursor.execute('''
+                        SELECT * FROM camfire 
+                        WHERE guild = ? 
+                        AND channel = ? 
+                    ''', (message.guild.id, channel))
                     
-                if notes.empty:
-                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3 
-                    temp = {"Guild": message.guild.id,"Channel": message.channel.id,"Message": msParSplit[3], "EndTime": datetime.now() + timedelta(hours=t)}
-                    df = df.append(temp, ignore_index=True)
-                    df.to_csv(path, index=False)
+                    row = cursor.fetchone()
+                    
+                    cursor.execute('UPDATE campfire SET endTime = ?, message = ? WHERE id = ?',(saveTime, msParSplit[3], row['id']))
                 else:
+                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
+                    saveTime = str(datetime.now() + timedelta(hours=t)) 
+                    cursor.execute('''
+                        INSERT INTO users (guild, channel, message, endTime) 
+                        VALUES (?, ?, ?)
+                    ''', (message.guild.id, message.channel.id, msParSplit[3], saveTime))
                     embed = discord.Embed(
-                            color=discord.Color.red())
-                    embed.add_field(name="Channel in Use",value="Voice Channel is in use. It will free up at " + notes["EndTime"].iloc[0])
+                            color=discord.Color.yellow())
+                    embed.add_field(name="Channel was not in use. Added Message for Channel",value=f":white_check_mark: Message will now send on join to {message.channel.name}. It will free up at " + saveTime)
                     await message.channel.send(embed=embed)
                     
         if action.lower() == "end" or  action.lower() == "delete" and len(msSpSplit) >= 3 and len(msSpSplit) >= 2:  
-            raise NotImplemented  
+            channel = msParSplit[1]
+            id = channelCheck(message, channel)
+            if id is not None:
+                endTime = campfireInUseCheck(cursor, message.guild.id, channel)
+                if endTime is None:
+                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
+                    saveTime = str(datetime.now() + timedelta(hours=t)) 
+                    cursor.execute('''
+                        INSERT INTO users (guild, channel, message, endTime) 
+                        VALUES (?, ?, ?)
+                    ''', (message.guild.id, message.channel.id, msParSplit[3], saveTime))
+                    
+                    embed = discord.Embed(
+                            color=discord.Color.blurple())
+                    embed.add_field(name="Delete Message for Channel",value=f":white_check_mark: Message will now send on join to {message.channel.name}. It will free up at " + saveTime)
+                    await message.channel.send(embed=embed)
+                else:
+                    embed = discord.Embed(
+                            color=discord.Color.yellow())
+                    embed.add_field(name="Channel is Free",value="Voice Channel is not in use. Use `-setupcampfire add` to set up a campfire")
+                    await message.channel.send(embed=embed)
+            
+        
+    sqliteConnection.commit()
+    sqliteConnection.close()
     
 async def channelCheck(message: discord.Message, channel: str, action, repoPath):
     exist = [x for x in message.guild.voice_channels if channel.lower() == x.name.lower()]
@@ -172,6 +233,40 @@ async def channelCheck(message: discord.Message, channel: str, action, repoPath)
         embed.add_field(name="Error",value="Voice Channel was not found. Please use one of the following " + cList)
         await message.channel.send(embed=embed)
         return None
+ 
+def campfireInUseCheck(cursor: sqlite3.Cursor, guild: int, channel):
+    
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    cursor.execute('''
+        SELECT * FROM camfire 
+        WHERE guild = ? 
+        AND channel = ? 
+        AND endTime > ?
+    ''', (guild, channel, current_time))
+    
+    record = cursor.fetchall()
+    if record.count() == 0 : 
+        return None
+    else:
+        time = cursor.fetchone()['endTime']
+        return datetime.strptime(time[0:19], "%Y-%m-%d %H:%M:%S")
+    
+def cleanUpCamfire(conn: sqlite3.Connection, cursor: sqlite3.Cursor, guild: int):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    #clean up
+    cursor.execute('''
+        SELECT * FROM camfire 
+        WHERE guild = ? 
+        AND endTime < ?
+    ''', (guild, current_time))
+    
+    clean = cursor.fetchall()
+    if clean.count() > 0 :
+        for row in clean:
+            cursor.execute("DELETE FROM users WHERE id = ?", (row['id'],))
+            conn.commit()    
             
 def vcCsvExist(guildId, memberId, subId, repoPath):
     df = pd.read_csv(repoPath)
@@ -181,11 +276,4 @@ def vcCsvExist(guildId, memberId, subId, repoPath):
         return False
     
     return True
-
-def joinedVoiceChannel():
-    raise NotImplemented
-    
-def setVoiceChannelMessage():
-    raise NotImplemented
-
         

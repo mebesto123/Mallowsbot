@@ -12,6 +12,7 @@ import Teams
 import voiceChannelNotification
 from AdminTools import AdminTools, adminRolesByGuild, AdminRectionConfirms
 from EmailSender import EmailSender
+from databaseSetup import initDatebase
 
 intents = discord.Intents.default()
 intents.members = True
@@ -32,6 +33,9 @@ emailSender = EmailSender(config['EmailServer']['smtpserver'],
                           config['EmailServer']['email'],
                           config['EmailServer']['password'],
                           config["DEFAULT"]["path"] + os.path.sep + config['EmailServer']['listpath'])
+
+##Database Setup
+initDatebase(config["DEFAULT"]["sqldb"])
 
 @client.event
 async def on_ready():
@@ -64,7 +68,10 @@ async def on_message(message):
         await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
         
     if message.content.lower().startswith("-setupcampfire"):
-        await voiceChannelNotification.setupCampfire(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelcampfirecsv"])     
+        await voiceChannelNotification.setupCampfire(message, config["DEFAULT"]["sqldb"])   
+    
+    if message.content.lower().startswith("-help setupcampfire"):
+        await voiceChannelNotification.helpCampfire(message)    
 
     if message.content.lower().startswith("-drunkphrase") and not message.content.lower().startswith("-drunkphrase langs"):
         await drunkphrase.playDrunkPhrase(message, config["DEFAULT"]["path"])
@@ -134,7 +141,7 @@ async def on_voice_state_update(member, before, after):
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
     await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"])
-    await voiceChannelNotification.sendCampfire(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelcampfirecsv"])
+    await voiceChannelNotification.sendCampfire(member, before, after, config["DEFAULT"]["sqldb"])
 
 
     if vc_after != vc_before and vc_after is not None and member.bot == False:
