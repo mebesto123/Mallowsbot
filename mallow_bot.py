@@ -32,7 +32,6 @@ emailSender = EmailSender(config['EmailServer']['smtpserver'],
                           config['EmailServer']['password'],
                           config["DEFAULT"]["path"] + os.path.sep + config['EmailServer']['listpath'])
 
-
 ##Database Setup
 initDatebase(config["DEFAULT"]["sqldb"])
 
