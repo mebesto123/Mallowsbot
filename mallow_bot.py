@@ -9,6 +9,7 @@ import voicechatlog
 import Teams
 import voiceChannelNotification
 from EmailSender import EmailSender
+from databaseSetup import initDatebase
 
 intents = discord.Intents.default()
 intents.members = True
@@ -31,6 +32,9 @@ emailSender = EmailSender(config['EmailServer']['smtpserver'],
                           config['EmailServer']['password'],
                           config["DEFAULT"]["path"] + os.path.sep + config['EmailServer']['listpath'])
 
+##Database Setup
+initDatebase(config["DEFAULT"]["sqldb"])
+
 @client.event
 async def on_ready():
     print('We have logged in as {0.user}'.format(client))
@@ -42,7 +46,7 @@ async def on_guild_join(guild):
         await general.send('Hello {}! I am Mallows Bot. Try `-help connectiontune` for Mallow Bot uses'.format(guild.name))
 
 @client.event
-async def on_message(message):
+async def on_message(message: discord.Message):
     if message.author == client.user:
         return
     
@@ -54,6 +58,12 @@ async def on_message(message):
 
     if message.content.lower().startswith("-vcunsub"):
         await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"])
+        
+    if message.content.lower().startswith("-setupcampfire"):
+        await voiceChannelNotification.setupCampfire(message, config["DEFAULT"]["sqldb"])   
+    
+    if message.content.lower().startswith("-help setupcampfire") or message.content.lower().startswith("-help campfire"):
+        await voiceChannelNotification.helpCampfire(message)    
     
     if message.content.lower().startswith("-connectiontune"):
         await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["connectioncsv"], "con")
@@ -97,6 +107,7 @@ async def on_voice_state_update(member, before, after):
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
     await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"])
+    await voiceChannelNotification.sendCampfire(member, before, after, config["DEFAULT"]["sqldb"])
 
     if vc_after != vc_before and vc_after is not None and member.bot == False:
         try:
