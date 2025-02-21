@@ -107,10 +107,10 @@ async def sendCampfire(member: discord.Member, before, after, sqldb):
     cursor: sqlite3.Cursor = sqliteConnection.cursor()
     
     cursor.execute('''
-                        SELECT * FROM camfire 
+                        SELECT * FROM campfire 
                         WHERE guild = ? 
                         AND channel = ? 
-                    ''', (member.guild.id, vc_after.name))
+                    ''', (member.guild.id, vc_after.id))
     
     row = cursor.fetchone()
     
@@ -119,106 +119,130 @@ async def sendCampfire(member: discord.Member, before, after, sqldb):
     
     #1234567890123456789
     #2025-01-08 20:25:04.625175
-    strTime = row['endTime']
+    strTime = row[4]
     timer = datetime.strptime(strTime[0:19], "%Y-%m-%d %H:%M:%S")
-    if timer > datetime.now():
-        cleanUpCamfire(sqliteConnection, cursor, member.guild.id)
+    if timer < datetime.now():
+        cleanUpcampfire(sqliteConnection, cursor, member.guild.id)
         return 'False'
 
     if vc_after != vc_before and vc_after is not None and vc_before is None and member.bot == False:
-        sub = discord.utils.get(member.guild.members, id=member.id)
-        channel = await sub.create_dm()
-        await channel.send(row['message'])
+        user = discord.utils.get(member.guild.members, id=member.id)
+        channel = await user.create_dm()
+        await channel.send(row[3])
         
 async def setupCampfire(message: discord.Message, sqldb: str):
     #-setupcampfire action "channel" "message" durationHour=3hr
     sqliteConnection = sqlite3.connect(sqldb)
     cursor: sqlite3.Cursor = sqliteConnection.cursor()
-    cleanUpCamfire(sqliteConnection, cursor, message.guild.id)
+    cleanUpcampfire(sqliteConnection, cursor, message.guild.id)
     msParSplit = message.content.split('"')
+    if len(msParSplit) == 1:
+        embed = discord.Embed(
+                color=discord.Color.red())
+        embed.add_field(name="Check Parentheses",value="Check your parentheses use \" not `""` ")
+        await message.channel.send(embed=embed)
+        sqliteConnection.close()
+        return
     msSpSplit = message.content.split(' ')
-    if len(msSpSplit) >= 3:
-        action = msSpSplit[1]
-        if (action.lower() == "new" or  action.lower() == "add") and len(msSpSplit) > 3 and len(msSpSplit) >= 4:
-            channel = msParSplit[1]
-            id = channelCheck(message, channel)
-            if id is not None:
-                endTime = campfireInUseCheck(cursor, message.guild.id, channel)
-                if endTime is None:
-                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
-                    saveTime = str(datetime.now() + timedelta(hours=t)) 
-                    cursor.execute('''
-                        INSERT INTO users (guild, channel, message, endTime) 
-                        VALUES (?, ?, ?)
-                    ''', (message.guild.id, message.channel.id, msParSplit[3], saveTime))
-                    
-                    embed = discord.Embed(
-                            color=discord.Color.blurple())
-                    embed.add_field(name="Added Message for Channel",value=f":white_check_mark: Message will now send on join to {message.channel.name}. It will free up at " + saveTime)
-                    await message.channel.send(embed=embed)
-                else:
-                    embed = discord.Embed(
-                            color=discord.Color.red())
-                    embed.add_field(name="Channel in Use",value="Voice Channel is in use. It will free up at " + endTime)
-                    await message.channel.send(embed=embed)
-            
-        if action.lower() == "edit" or  action.lower() == "update" and len(msSpSplit) > 3 and len(msSpSplit) >= 4:
-            channel = msParSplit[1]
-            id = channelCheck(message, channel)
-            if id is not None:
-                endTime = campfireInUseCheck(cursor, message.guild.id, channel)
-                if endTime is not None:
-                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
-                    saveTime = str(datetime.now() + timedelta(hours=t)) 
-                    cursor.execute('''
-                        SELECT * FROM camfire 
-                        WHERE guild = ? 
-                        AND channel = ? 
-                    ''', (message.guild.id, channel))
-                    
-                    row = cursor.fetchone()
-                    
-                    cursor.execute('UPDATE campfire SET endTime = ?, message = ? WHERE id = ?',(saveTime, msParSplit[3], row['id']))
-                else:
-                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
-                    saveTime = str(datetime.now() + timedelta(hours=t)) 
-                    cursor.execute('''
-                        INSERT INTO users (guild, channel, message, endTime) 
-                        VALUES (?, ?, ?)
-                    ''', (message.guild.id, message.channel.id, msParSplit[3], saveTime))
-                    embed = discord.Embed(
-                            color=discord.Color.yellow())
-                    embed.add_field(name="Channel was not in use. Added Message for Channel",value=f":white_check_mark: Message will now send on join to {message.channel.name}. It will free up at " + saveTime)
-                    await message.channel.send(embed=embed)
-                    
-        if action.lower() == "end" or  action.lower() == "delete" and len(msSpSplit) >= 3 and len(msSpSplit) >= 2:  
-            channel = msParSplit[1]
-            id = channelCheck(message, channel)
-            if id is not None:
-                endTime = campfireInUseCheck(cursor, message.guild.id, channel)
-                if endTime is None:
-                    t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
-                    saveTime = str(datetime.now() + timedelta(hours=t)) 
-                    cursor.execute('''
-                        INSERT INTO users (guild, channel, message, endTime) 
-                        VALUES (?, ?, ?)
-                    ''', (message.guild.id, message.channel.id, msParSplit[3], saveTime))
-                    
-                    embed = discord.Embed(
-                            color=discord.Color.blurple())
-                    embed.add_field(name="Delete Message for Channel",value=f":white_check_mark: Message will now send on join to {message.channel.name}. It will free up at " + saveTime)
-                    await message.channel.send(embed=embed)
-                else:
-                    embed = discord.Embed(
-                            color=discord.Color.yellow())
-                    embed.add_field(name="Channel is Free",value="Voice Channel is not in use. Use `-setupcampfire add` to set up a campfire")
-                    await message.channel.send(embed=embed)
-            
+    try:
+        
+        if len(msSpSplit) >= 3:
+            action = msSpSplit[1]
+            if (action.lower() == "new" or  action.lower() == "add") and len(msSpSplit) > 3 and len(msSpSplit) >= 4:
+                channel = msParSplit[1]
+                id = await channelCheck(message, channel)
+                if id is not None:
+                    endTime = campfireInUseCheck(cursor, message.guild.id, id)
+                    if endTime is None:
+                        t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
+                        saveTime = str(datetime.now() + timedelta(hours=t)) 
+                        cursor.execute('''
+                            INSERT INTO campfire (guild, channel, message, endTime) 
+                            VALUES (?, ?, ?, ?)
+                        ''', (message.guild.id, id, msParSplit[3], saveTime))
+                        
+                        embed = discord.Embed(
+                                color=discord.Color.blurple())
+                        embed.add_field(name="Added Message for Channel",value=f":white_check_mark: Message will now send on join to {channelName(message, id)}. It will free up at " + saveTime)
+                        await message.channel.send(embed=embed)
+                    else:
+                        embed = discord.Embed(
+                                color=discord.Color.red())
+                        embed.add_field(name="Channel in Use",value="Voice Channel is in use. It will free up at " + endTime)
+                        await message.channel.send(embed=embed)
+                
+            if action.lower() == "edit" or  action.lower() == "update" and len(msSpSplit) > 3 and len(msSpSplit) >= 4:
+                channel = msParSplit[1]
+                id = await channelCheck(message, channel)
+                if id is not None:
+                    endTime = campfireInUseCheck(cursor, message.guild.id, id)
+                    if endTime is not None:
+                        t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
+                        saveTime = str(datetime.now() + timedelta(hours=t)) 
+                        cursor.execute('''
+                            SELECT * FROM campfire 
+                            WHERE guild = ? 
+                            AND channel = ? 
+                        ''', (message.guild.id, id))
+                        
+                        row = cursor.fetchone()
+                        
+                        cursor.execute('''UPDATE campfire 
+                                       SET endTime = ?, message = ? 
+                                       WHERE id = ?''',(saveTime, msParSplit[3], row[0]))
+                        
+                        embed = discord.Embed(
+                                color=discord.Color.blurple())
+                        embed.add_field(name="Update Message for Channel",value=f":white_check_mark: Message will now send on join to {channelName(message, id)}. It will free up at " + saveTime)
+                        await message.channel.send(embed=embed)
+                    else:
+                        t = (int(msParSplit[4].lstrip()) if msParSplit[4].lstrip().isdigit() else 3) if len(msParSplit) >= 5 else 3
+                        saveTime = str(datetime.now() + timedelta(hours=t)) 
+                        cursor.execute('''
+                            INSERT INTO campfire (guild, channel, message, endTime) 
+                            VALUES (?, ?, ?, ?)
+                        ''', (message.guild.id, id, msParSplit[3], saveTime))
+                        embed = discord.Embed(
+                                color=discord.Color.yellow())
+                        embed.add_field(name="Channel was not in use. Added Message for Channel",value=f":white_check_mark: Message will now send on join to {channelName(message, id)}. It will free up at " + saveTime)
+                        await message.channel.send(embed=embed)
+                        
+            if action.lower() == "end" or  action.lower() == "delete" and len(msSpSplit) >= 3 and len(msSpSplit) >= 2:  
+                channel = msParSplit[1]
+                id = await channelCheck(message, channel)
+                if id is not None:
+                    endTime = campfireInUseCheck(cursor, message.guild.id, id)
+                    if endTime is not None:
+                        cursor.execute('''
+                            DELETE FROM campfire WHERE guild = ? AND channel = ? 
+                        ''', (message.guild.id, id))
+                        
+                        embed = discord.Embed(
+                                color=discord.Color.blurple())
+                        embed.add_field(name="Delete Message for Channel",value=f":white_check_mark: Message deleted!")
+                        await message.channel.send(embed=embed)
+                    else:
+                        embed = discord.Embed(
+                                color=discord.Color.yellow())
+                        embed.add_field(name="Channel is Free",value="Voice Channel is not in use. Use `-setupcampfire add` to set up a campfire")
+                        await message.channel.send(embed=embed)
+    except Exception as e:
+        await EasyErrors.easyError(message, f"Error trying to create campfire: {e} ")
+                      
         
     sqliteConnection.commit()
     sqliteConnection.close()
     
-async def channelCheck(message: discord.Message, channel: str, action, repoPath):
+    
+def channelName(message: discord.Message, id):
+    result = next((obj for obj in message.guild.voice_channels if obj.id == id), None)
+    
+    if result:
+        return result.name
+    else:
+        return ""
+        
+async def channelCheck(message: discord.Message, channel: str):
     exist = [x for x in message.guild.voice_channels if channel.lower() == x.name.lower()]
     if len(exist) == 1:
         return exist[0].id
@@ -236,36 +260,33 @@ async def channelCheck(message: discord.Message, channel: str, action, repoPath)
  
 def campfireInUseCheck(cursor: sqlite3.Cursor, guild: int, channel):
     
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
     cursor.execute('''
-        SELECT * FROM camfire 
+        SELECT * FROM campfire 
         WHERE guild = ? 
         AND channel = ? 
-        AND endTime > ?
-    ''', (guild, channel, current_time))
+    ''', (guild, channel))
     
     record = cursor.fetchall()
-    if record.count() == 0 : 
+    if len(record) == 0 : 
         return None
     else:
-        time = cursor.fetchone()['endTime']
+        time = record[0][4]
         return datetime.strptime(time[0:19], "%Y-%m-%d %H:%M:%S")
     
-def cleanUpCamfire(conn: sqlite3.Connection, cursor: sqlite3.Cursor, guild: int):
+def cleanUpcampfire(conn: sqlite3.Connection, cursor: sqlite3.Cursor, guild: int):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     #clean up
     cursor.execute('''
-        SELECT * FROM camfire 
+        SELECT * FROM campfire 
         WHERE guild = ? 
         AND endTime < ?
     ''', (guild, current_time))
     
     clean = cursor.fetchall()
-    if clean.count() > 0 :
+    if len(clean) > 0 :
         for row in clean:
-            cursor.execute("DELETE FROM users WHERE id = ?", (row['id'],))
+            cursor.execute("DELETE FROM users WHERE id = ?", (row[0],))
             conn.commit()    
             
 def vcCsvExist(guildId, memberId, subId, repoPath):

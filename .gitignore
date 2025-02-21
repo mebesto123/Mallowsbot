@@ -139,3 +139,6 @@ MallowsBotKey.txt
 #Music
 *.mp3
 Backups/
+
+#Data
+*.db

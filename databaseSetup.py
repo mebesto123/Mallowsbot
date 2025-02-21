@@ -6,7 +6,7 @@ def initDatebase(sqldb: str):
     cursor: sqlite3.Cursor = sqliteConnection.cursor()
 
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS camfire (
+        CREATE TABLE IF NOT EXISTS campfire (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             guild TEXT NOT NULL,
             channel TEXT NOT NULL,
