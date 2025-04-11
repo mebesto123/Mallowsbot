@@ -9,7 +9,7 @@ import voicechatlog
 import Teams
 import voiceChannelNotification
 from EmailSender import EmailSender
-from databaseSetup import initDatebase
+from databaseSetup import initDatebase,vcPopulate
 
 intents = discord.Intents.default()
 intents.members = True
@@ -53,11 +53,15 @@ async def on_message(message: discord.Message):
     #User name comes in like <@!#######>
     #also there is Get_All_Members
     #print("Author: ",message.author," Message: ",message.content)
+
     if message.content.lower().startswith("-vcsub"):
-        await voiceChannelNotification.setupVoiceChannelSubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"]) 
+        await voiceChannelNotification.setupVoiceChannelSubcriber(message, config["DEFAULT"]["sqldb"]) 
+        
+    if message.content.lower().startswith("-vcpop"):
+        vcPopulate(config["DEFAULT"]["sqldb"], config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"]) 
 
     if message.content.lower().startswith("-vcunsub"):
-        await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["path"], config["DEFAULT"]["voicechannelnotifcsv"])
+        await voiceChannelNotification.setupVoiceChannelUnsubcriber(message, config["DEFAULT"]["sqldb"]) 
         
     if message.content.lower().startswith("-setupcampfire"):
         await voiceChannelNotification.setupCampfire(message, config["DEFAULT"]["sqldb"])   
@@ -106,7 +110,7 @@ async def on_voice_state_update(member, before, after):
 
     #Send Voice Channel Log updates
     await voicechatlog.writeToVoiceLog(member, before, after)
-    await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["path"] + os.path.sep + config["DEFAULT"]["voicechannelnotifcsv"])
+    await voiceChannelNotification.sendNotifications(member, before, after, config["DEFAULT"]["sqldb"])
     await voiceChannelNotification.sendCampfire(member, before, after, config["DEFAULT"]["sqldb"])
 
     if vc_after != vc_before and vc_after is not None and member.bot == False:

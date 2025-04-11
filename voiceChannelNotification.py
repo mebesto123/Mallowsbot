@@ -1,82 +1,108 @@
 import discord
-import pandas as pd
 import os
 import EasyErrors
 from datetime import *
 import sqlite3
 
 
-async def sendNotifications(member, before, after, repoPath):
-
-    df = pd.read_csv(repoPath)
-    subs = df[(df.Guild == member.guild.id) & (df.Sub == member.id)]
-
+async def sendNotifications(member, before, after, sqldb: str):
+   
+    sqliteConnection = sqlite3.connect(sqldb)
+    cursor: sqlite3.Cursor = sqliteConnection.cursor()
+    
+    cursor.execute('''
+                        SELECT * FROM vcNotif 
+                        WHERE guild = ? 
+                        AND sub = ? 
+                    ''', (member.guild.id, member.id))
+    
+    subs = cursor.fetchall()
+    
     vc_before = before.channel
     vc_after = after.channel
 
-    if vc_after != vc_before and vc_after is not None and vc_before is None and member.bot == False and not subs.empty:
-        for index, row in subs.iterrows():
-            sub = discord.utils.get(member.guild.members, id=row.Member)
+    if vc_after != vc_before and vc_after is not None and vc_before is None and member.bot == False and subs:
+        for row in subs:
+            strTime = row[4]
+            timer = datetime.strptime(strTime[0:19], "%Y-%m-%d %H:%M:%S")
+            if timer > datetime.now():
+                continue
+            
+            saveTime = str(datetime.now() + timedelta(hours=1))
+            sub = discord.utils.get(member.guild.members, id=int(row[2]))
             channel = await sub.create_dm()
             await channel.send("{} has joined voice on {}".format(member.name, member.guild.name) )
             
-async def setupVoiceChannelSubcriber(message, repoPath, csvFile):
+            cursor.execute('''UPDATE vcNotif 
+                SET lastSendTime = ?
+                WHERE id = ?''',(saveTime, row[0]))
+            sqliteConnection.commit()
+    
+    sqliteConnection.close()
+            
+async def setupVoiceChannelSubcriber(message, sqldb: str):
     ms = message.content.split(" ")
     if len(ms) > 1 :
         member = discord.utils.get(message.guild.members, name=ms[1])
 
         if member is None:
             embed = discord.Embed(
-                    #title="Command Error",
                     color=discord.Color.red())
             embed.add_field(name="Error",value="Error using command `-vcsub`: User `" + ms[1] + "` not found. Correct capitalization is required.")
             await message.channel.send(embed=embed)
-        elif vcCsvExist(message.guild.id, message.author.id, member.id, repoPath + os.path.sep + csvFile):
+        elif vcCsvExist(message.guild.id, message.author.id, member.id, sqldb):
             embed = discord.Embed(
-                    #title="Command Error",
                     color=discord.Color.red())
             embed.add_field(name="Error",value="Error using command `-vcsub`: You already subcribed to User `" + ms[1] + "`.")
             await message.channel.send(embed=embed)
         else:
-            df = pd.read_csv(repoPath + os.path.sep + csvFile)
-            temp = {"Guild": message.guild.id,"Member": message.author.id, "Sub": member.id}
-            df = df.append(temp, ignore_index=True)
-            df.to_csv(repoPath + os.path.sep + csvFile, index=False)
+            sqliteConnection = sqlite3.connect(sqldb)
+            cursor: sqlite3.Cursor = sqliteConnection.cursor()
+            
+            cursor.execute('''
+                INSERT INTO vcNotif (guild, member, sub, lastSendTime) 
+                VALUES (?, ?, ?, ?)
+            ''', (message.guild.id, message.author.id, member.id, str(datetime.min)))
+            
+            sqliteConnection.commit()
+            sqliteConnection.close()
 
             await message.channel.send(":white_check_mark: " + message.author.name + " has subcribed to " + ms[1] + "!!" )
     else:
         embed = discord.Embed(
-                #title="Command Error",
                 color=discord.Color.red())
         embed.add_field(name="Error",value="Error using command `-vcsub`: No User name supplied")
         await message.channel.send(embed=embed)
 
-async def setupVoiceChannelUnsubcriber(message, repoPath, csvFile):
+async def setupVoiceChannelUnsubcriber(message, sqldb: str):
     ms = message.content.split(" ")
     if len(ms) > 1 :
         member = discord.utils.get(message.guild.members, name=ms[1])
 
         if member is None:
             embed = discord.Embed(
-                    #title="Command Error",
                     color=discord.Color.red())
             embed.add_field(name="Error",value="Error using command `-vcunsub`: User `" + ms[1] + "` not found. Correct capitalization is required.")
             await message.channel.send(embed=embed)
-        elif not vcCsvExist(message.guild.id, message.author.id, member.id, repoPath + os.path.sep + csvFile):
+        elif not vcCsvExist(message.guild.id, message.author.id, member.id, sqldb):
             embed = discord.Embed(
-                    #title="Command Error",
                     color=discord.Color.red())
             embed.add_field(name="Error",value="Error using command `-vcunsub`: You are not subcribed to User `" + ms[1] + "`.")
             await message.channel.send(embed=embed)
-        else:
-            df = pd.read_csv(repoPath + os.path.sep + csvFile)
-            df = df.drop(df[(df.Guild == message.guild.id) & (df.Member == message.author.id) & (df.Sub == member.id)].index)
-            df.to_csv(repoPath + os.path.sep + csvFile, index=False)
+        else:            
+            sqliteConnection = sqlite3.connect(sqldb)
+            cursor: sqlite3.Cursor = sqliteConnection.cursor()
+            
+            cursor.execute('''
+                DELETE FROM vcNotif WHERE guild = ? AND member = ? AND sub = ? ) 
+            ''', (message.guild.id, message.author.id, member.id))
+            
+            sqliteConnection.commit()
+            sqliteConnection.close()
 
             await message.channel.send(":white_check_mark: " + message.author.name + " has unsubcribed to " + ms[1] + "!!" )
     else:
         embed = discord.Embed(
-                #title="Command Error",
                 color=discord.Color.red())
         embed.add_field(name="Error",value="Error using command `-vcunsub`: No User name supplied")
         await message.channel.send(embed=embed)
@@ -129,6 +155,9 @@ async def sendCampfire(member: discord.Member, before, after, sqldb):
         user = discord.utils.get(member.guild.members, id=member.id)
         channel = await user.create_dm()
         await channel.send(row[3])
+    
+    # Close the connection
+    sqliteConnection.close()
         
 async def setupCampfire(message: discord.Message, sqldb: str):
     #-setupcampfire action "channel" "message" durationHour=3hr
@@ -252,7 +281,6 @@ async def channelCheck(message: discord.Message, channel: str):
             cList += c.name + "\n"
         cList += "```"
         embed = discord.Embed(
-                #title="Command Error",
                 color=discord.Color.red())
         embed.add_field(name="Error",value="Voice Channel was not found. Please use one of the following " + cList)
         await message.channel.send(embed=embed)
@@ -289,11 +317,20 @@ def cleanUpcampfire(conn: sqlite3.Connection, cursor: sqlite3.Cursor, guild: int
             cursor.execute("DELETE FROM users WHERE id = ?", (row[0],))
             conn.commit()    
             
-def vcCsvExist(guildId, memberId, subId, repoPath):
-    df = pd.read_csv(repoPath)
-    exist = df[(df.Guild == guildId) & (df.Member == memberId) & (df.Sub == subId)].Sub
+def vcCsvExist(guildId, memberId, subId, sqldb: str):    
+    sqliteConnection = sqlite3.connect(sqldb)
+    cursor: sqlite3.Cursor = sqliteConnection.cursor()
     
-    if exist.empty:
+    cursor.execute('''
+                        SELECT * FROM vcNotif 
+                        WHERE guild = ? 
+                        AND sub = ? 
+                        AND member = ?
+                    ''', (guildId, subId, memberId))
+    
+    row = cursor.fetchone()
+    
+    if row is None:
         return False
     
     return True
