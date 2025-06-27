@@ -1,3 +1,4 @@
+import asyncio
 import discord
 import pandas as pd
 from time import sleep
@@ -76,7 +77,7 @@ async def playDisconnection(guildId, author, repoPath, onDisconnect = None):
 
 async def playfile(song, member, repoPath, onDisconnect = None):
     path = repoPath + os.path.sep + 'Video.Audio'
-    channel = member.voice.channel if onDisconnect is None else onDisconnect.channel
+    channel: discord.VoiceChannel = member.voice.channel if onDisconnect is None else onDisconnect.channel
     
     special = specialDate(repoPath)
 
@@ -88,7 +89,7 @@ async def playfile(song, member, repoPath, onDisconnect = None):
         vc.play(discord.FFmpegPCMAudio(path, executable= exe))
         while vc.is_playing():
             #Start Playing
-            sleep(.1)            
+            await asyncio.sleep(.1)            
         await vc.disconnect()
 
 def specialDate(repoPath):
