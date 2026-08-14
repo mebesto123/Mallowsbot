@@ -142,3 +142,6 @@ Backups/
 
 #Data
 *.db
+
+#TestFile
+testfile.py

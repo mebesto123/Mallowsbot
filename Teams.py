@@ -1,58 +1,61 @@
-from operator import imod
-import discord
-import os
-import platform
 import random
+import discord
 from EasyErrors import easyError
 
 
+def BuildTeams(members, team_size):
+    """Return list of teams (lists of Member objects) by shuffling and chunking.
+
+    members: iterable of discord.Member
+    team_size: positive int
+    """
+    if team_size <= 0:
+        raise ValueError("team_size must be greater than 0")
+
+    members_copy = list(members)
+    random.shuffle(members_copy)
+    return [members_copy[i : i + team_size] for i in range(0, len(members_copy), team_size)]
+
+
 async def CreateTeams(message):
-    if message.author.voice is not None:
-        channel = message.author.voice.channel
-        members = [message.guild.get_member(x) for x in list(channel.voice_states.keys())]
-        if len(message.content.split(" ")) > 1:
-            try:
-                numPerTeams = int(message.content.split(" ")[1])
-            except:
-                await easyError(message,"Incorrect use of comand, format as follows `-newTeams #`, ie `-newTeams 2`")
-            else:
-                if numPerTeams > len(members):
-                    await easyError(message,"Team size to larger. There is only " + str(len(members)) + " members in the chanel.")
-                else:
-                    teams = []
-                    memberUsed = []
-                    numTeams = len(members)//numPerTeams
-                    numTeams = numTeams if len(members) % numPerTeams == 0 else numTeams + 1
-                    for x in range(0,numTeams):
-                        print(x)
-                        teams.append([])
-                        for m in range(0 , numPerTeams):
-                            counter = True
-                            if len(members) == len(memberUsed):
-                                break
-                            while(counter):
-                                member = random.randint(0, len(members)-1)
-                                if member not in memberUsed:
-                                    teams[x].append(members[member].name)
-                                    memberUsed.append(member)
-                                    counter = False
-                    await printTeams(message, teams)
-        else:
-            await easyError(message,"You need to specify the number of members per teams, ie `-newTeams 2`")
-    else:
-        await easyError(message,"Error user of command is not in a Voice Channel. You need to be a voice channel to use the command.")
+    # keep original entrypoint name for compatibility
+    if message.author.voice is None:
+        await easyError(message, "You need to be in a voice channel to use this command.")
+        return
+
+    channel = message.author.voice.channel
+    members = [message.guild.get_member(x) for x in list(channel.voice_states.keys())]
+    members = [m for m in members if m is not None]
+
+    args = message.content.split()
+    if len(args) < 2:
+        await easyError(message, "You need to specify the number of members per teams, ie `-newTeams 2`")
+        return
+
+    try:
+        numPerTeams = int(args[1])
+    except ValueError:
+        await easyError(message, "Incorrect use of command, format as follows `-newTeams #`, ie `-newTeams 2`")
+        return
+
+    if numPerTeams <= 0:
+        await easyError(message, "Team size must be greater than 0.")
+        return
+
+    if numPerTeams > len(members):
+        await easyError(message, f"Team size too large. There are only {len(members)} members in the channel.")
+        return
+
+    teams = BuildTeams(members, numPerTeams)
+    await printTeams(message, teams)
+
 
 async def printTeams(message, teams):
-    embed = discord.Embed(
-        #title="Command Error",
-        color=discord.Color.green())
-    embed.add_field(name="Created Teams",value="Teams were created as followed",inline=False)
-    counter = 1
-    teamMembers = ""
-    for team in teams:
-        for member in team:
-            teamMembers += member + " "
-        embed.add_field(name="Team " + str(counter), value=teamMembers, inline=True)
-        teamMembers = ""
-        counter += 1
+    embed = discord.Embed(color=discord.Color.green())
+    embed.add_field(name="Created Teams", value="Teams were created as follows:", inline=False)
+
+    for idx, team in enumerate(teams, start=1):
+        member_names = " ".join(getattr(m, "display_name", str(m)) for m in team if m is not None)
+        embed.add_field(name=f"Team {idx}", value=member_names or "No members", inline=True)
+
     await message.channel.send(embed=embed)
