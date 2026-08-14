@@ -8,6 +8,7 @@ import connectionTune
 import voicechatlog
 import Teams
 import voiceChannelNotification
+import bot_calendar as cal_module
 from EmailSender import EmailSender
 from databaseSetup import initDatebase,vcPopulate
 
@@ -98,8 +99,24 @@ async def on_message(message: discord.Message):
     if message.content.lower().startswith("-email") or message.content.lower().startswith("-sendemail"):
         await emailSender.emailUser(message)
     
-# @client.event
-# async def on_reaction_add(reaction, user):   
+    if message.content.lower().startswith("-calendar"):
+        args = message.content[9:].strip()  # Get arguments after "-calendar"
+        await cal_module.displayCalendar(message, config["DEFAULT"]["sqldb"], args)
+    
+    if message.content.lower().startswith("-addevent ") and not message.content.lower().startswith("-addeventrange"):
+        args = message.content[9:].strip()  # Get arguments after "-addevent"
+        await cal_module.addEventToCalendar(message, config["DEFAULT"]["sqldb"], args)
+    
+    if message.content.lower().startswith("-addeventrange"):
+        args = message.content[14:].strip()  # Get arguments after "-addeventrange"
+        await cal_module.addEventRangeToCalendar(message, config["DEFAULT"]["sqldb"], args)
+    
+    if message.content.lower().startswith("-removeevent"):
+        args = message.content[12:].strip()  # Get arguments after "-removeevent"
+        await cal_module.removeEventFromCalendar(message, config["DEFAULT"]["sqldb"], args)
+    
+    if message.content.lower().startswith("-help calendar"):
+        await cal_module.helpCalendar(message)   
     
 @client.event
 async def on_voice_state_update(member, before, after):

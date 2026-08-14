@@ -27,6 +27,16 @@ def initDatebase(sqldb: str):
         )
     ''')
     
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS calendarEvents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            username TEXT NOT NULL,
+            event_description TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
     sqliteConnection.commit() 
     # Close the connection
     sqliteConnection.close()

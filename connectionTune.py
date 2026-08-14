@@ -83,7 +83,11 @@ async def playfile(song, member, repoPath, onDisconnect = None):
 
     song = special if special != 'False' else song
     if (member.voice is not None or onDisconnect is not None) and member.bot == False:
-        vc = await channel.connect()
+        vc = await channel.connect(timeout=30,reconnect=False)
+        
+        while not vc.is_connected():
+            await asyncio.sleep(0.5)
+        
         path += os.path.sep + song
         exe = repoPath + os.path.sep + "ffmpeg" + os.path.sep + "bin" + os.path.sep + 'ffmpeg.exe' if platform.system() == 'Windows' else '/usr/bin/ffmpeg'
         vc.play(discord.FFmpegPCMAudio(path, executable= exe))
