@@ -67,7 +67,7 @@ def getCalendarEventsForMonth(sqldb, year, month):
         cursor.execute('''
             SELECT date, username, event_description FROM calendarEvents
             WHERE date >= ? AND date < ?
-            ORDER BY date, username
+            ORDER BY username, date 
         ''', (start_date, end_date))
         
         events_dict = {}
@@ -273,20 +273,25 @@ class CalendarDisplay:
         """
         if not events_dict:
             return ""
-        
-        events_text = ""
+
+        user_groups = {}
         for date in sorted(events_dict.keys()):
             day = date.split("-")[2]
-            events_text += f"\n**{day}**: "
-            event_list = []
             for event in events_dict[date]:
+                username = event['username']
+                if username not in user_groups:
+                    user_groups[username] = []
                 if event['description']:
-                    event_list.append(f"{event['username']}: {event['description']}")
+                    user_groups[username].append(f"{day}: {event['description']}")
                 else:
-                    event_list.append(f"{event['username']}")
-            events_text += " | ".join(event_list)
-        
-        return events_text if events_text else ""
+                    user_groups[username].append(f"{day}")
+
+        events_text = ""
+        for username in sorted(user_groups.keys()):
+            entries = user_groups[username]
+            events_text += f"**{username}**\n- " + "\n- ".join(entries) + "\n\n"
+
+        return events_text.strip() if events_text else ""
     
     def parse_date_input(self, date_string):
         """
@@ -404,17 +409,18 @@ async def displayCalendar(message, sqldb, args=""):
     embed = cal_display.create_calendar_embed(year, month, events_dict)
     await calendar_channel.send(embed=embed)
     
-    # Send confirmation to the user
-    confirmation = discord.Embed(
-        title="Calendar Posted",
-        color=discord.Color.green()
-    )
-    confirmation.add_field(
-        name="Status",
-        value=f"Calendar for {cal_display.months_dict[month]} {year} has been posted to #Calendar",
-        inline=False
-    )
-    await message.channel.send(embed=confirmation)
+    # Send confirmation to the user, unless the command was sent in the Calendar channel itself
+    if message.channel.id != calendar_channel.id:
+        confirmation = discord.Embed(
+            title="Calendar Posted",
+            color=discord.Color.green()
+        )
+        confirmation.add_field(
+            name="Status",
+            value=f"Calendar for {cal_display.months_dict[month]} {year} has been posted to #Calendar",
+            inline=False
+        )
+        await message.channel.send(embed=confirmation)
 
 
 async def addEventToCalendar(message, sqldb, args=""):
@@ -529,17 +535,18 @@ async def addEventToCalendar(message, sqldb, args=""):
             )
         await calendar_channel.send(embed=embed)
         
-        # Send confirmation to user
-        confirmation = discord.Embed(
-            title="Event Added",
-            color=discord.Color.green()
-        )
-        confirmation.add_field(
-            name="Status",
-            value=f"Your event for {date_str} has been added to #Calendar",
-            inline=False
-        )
-        await message.channel.send(embed=confirmation)
+        # Send confirmation to user unless the command was sent in the Calendar channel itself
+        if message.channel.id != calendar_channel.id:
+            confirmation = discord.Embed(
+                title="Event Added",
+                color=discord.Color.green()
+            )
+            confirmation.add_field(
+                name="Status",
+                value=f"Your event for {date_str} has been added to #Calendar",
+                inline=False
+            )
+            await message.channel.send(embed=confirmation)
     else:
         embed = discord.Embed(
             title="Add Event Error",
@@ -677,17 +684,18 @@ async def addEventRangeToCalendar(message, sqldb, args=""):
             )
         await calendar_channel.send(embed=embed)
         
-        # Send confirmation to user
-        confirmation = discord.Embed(
-            title="Event Range Added",
-            color=discord.Color.green()
-        )
-        confirmation.add_field(
-            name="Status",
-            value=f"Event range ({start_date} to {end_date}) added to #Calendar ({dates_added} dates)",
-            inline=False
-        )
-        await message.channel.send(embed=confirmation)
+        # Send confirmation to user unless the command was sent in the Calendar channel itself
+        if message.channel.id != calendar_channel.id:
+            confirmation = discord.Embed(
+                title="Event Range Added",
+                color=discord.Color.green()
+            )
+            confirmation.add_field(
+                name="Status",
+                value=f"Event range ({start_date} to {end_date}) added to #Calendar ({dates_added} dates)",
+                inline=False
+            )
+            await message.channel.send(embed=confirmation)
     else:
         embed = discord.Embed(
             title="Add Event Range Error",
@@ -788,17 +796,18 @@ async def removeEventFromCalendar(message, sqldb, args=""):
         )
         await calendar_channel.send(embed=embed)
         
-        # Send confirmation to user
-        confirmation = discord.Embed(
-            title="Event Removed",
-            color=discord.Color.green()
-        )
-        confirmation.add_field(
-            name="Status",
-            value=f"Your event on {date_str} has been removed from #Calendar",
-            inline=False
-        )
-        await message.channel.send(embed=confirmation)
+        # Send confirmation to user unless the command was sent in the Calendar channel itself
+        if message.channel.id != calendar_channel.id:
+            confirmation = discord.Embed(
+                title="Event Removed",
+                color=discord.Color.green()
+            )
+            confirmation.add_field(
+                name="Status",
+                value=f"Your event on {date_str} has been removed from #Calendar",
+                inline=False
+            )
+            await message.channel.send(embed=confirmation)
     else:
         embed = discord.Embed(
             title="Remove Event Error",
@@ -893,14 +902,15 @@ async def helpCalendar(message):
     
     await calendar_channel.send(embed=embed)
     
-    # Send confirmation to user
-    confirmation = discord.Embed(
-        title="Calendar Help Posted",
-        color=discord.Color.blurple()
-    )
-    confirmation.add_field(
-        name="Status",
-        value="Calendar help has been posted to #Calendar",
-        inline=False
-    )
-    await message.channel.send(embed=confirmation)
+    # Send confirmation to user unless the command was sent in the Calendar channel itself
+    if message.channel.id != calendar_channel.id:
+        confirmation = discord.Embed(
+            title="Calendar Help Posted",
+            color=discord.Color.blurple()
+        )
+        confirmation.add_field(
+            name="Status",
+            value="Calendar help has been posted to #Calendar",
+            inline=False
+        )
+        await message.channel.send(embed=confirmation)
