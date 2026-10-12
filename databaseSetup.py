@@ -36,6 +36,15 @@ def initDatebase(sqldb: str):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS soundboard (
+            guild TEXT NOT NULL,
+            name TEXT NOT NULL COLLATE NOCASE,
+            filename TEXT NOT NULL,
+            PRIMARY KEY (guild, name)
+        )
+    ''')
     
     sqliteConnection.commit() 
     # Close the connection

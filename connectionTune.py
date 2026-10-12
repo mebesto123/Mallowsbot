@@ -98,12 +98,13 @@ async def playfile(song, member, repoPath, onDisconnect = None):
 
 def specialDate(repoPath):
     df = pd.read_csv(repoPath + os.path.sep + "SpecialDates.csv")
-    df.loc[df["Year"] == "****", "Year"] = str(date.today().year)
-    df.loc[df["Month"] == "**", "Month"] = str(date.today().month)
-    df.loc[df["Day"] == "**", "Day"] = str(date.today().day)
-    dataDf = df.loc[(df["Year"].astype(int) == date.today().year) &
-                     (df["Month"].astype(int) == date.today().month) &
-                     (df["Day"].astype(int) == date.today().day) &
+    today = date.today()
+    years = df["Year"].astype(str).replace("****", str(today.year)).astype(int)
+    months = df["Month"].astype(str).replace("**", str(today.month)).astype(int)
+    days = df["Day"].astype(str).replace("**", str(today.day)).astype(int)
+    dataDf = df.loc[(years == today.year) &
+                     (months == today.month) &
+                     (days == today.day) &
                      (df["IsActive"].astype(int) == 1), ['Song'] ].to_numpy()
     
     song = 'False'

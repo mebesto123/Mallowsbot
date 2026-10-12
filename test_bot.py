@@ -5,6 +5,7 @@ from discord.utils import find
 import os
 import configparser
 import connectionTune
+import soundboard
 import voicechatlog
 import Teams
 import voiceChannelNotification
@@ -75,6 +76,33 @@ async def on_message(message: discord.Message):
     if message.content.lower().startswith("-disconnectiontune"):
         await connectionTune.createConnectionTune(message, config["DEFAULT"]["path"], config["DEFAULT"]["disconnectioncsv"], "dis")
 
+    if soundboard.isCommand(message, "-addsound"):
+        await soundboard.addSoundFromMessage(message, config["DEFAULT"]["sqldb"], config["DEFAULT"]["path"])
+
+    if soundboard.isCommand(message, "-updatesound"):
+        await soundboard.updateSoundFromMessage(message, config["DEFAULT"]["sqldb"], config["DEFAULT"]["path"])
+
+    if soundboard.isCommand(message, "-deletesound"):
+        await soundboard.deleteSoundFromMessage(message, config["DEFAULT"]["sqldb"], config["DEFAULT"]["path"])
+
+    if soundboard.isCommand(message, "-help soundboard"):
+        await message.channel.send(
+            '`-soundboard` opens a reaction menu; `-playsound "name"` plays a sound directly. '
+            '`-addsound "name"` with an audio attachment; '
+            '`-updatesound "old name" "new name"` with a replacement attachment; '
+            '`-deletesound "name"`.'
+        )
+
+    if soundboard.isCommand(message, "-playsound"):
+        await soundboard.playSoundFromMessage(
+            message, config["DEFAULT"]["sqldb"], config["DEFAULT"]["path"], "-playsound"
+        )
+
+    if soundboard.isCommand(message, "-soundboard"):
+        await soundboard.sendSoundboardMenu(
+            message, config["DEFAULT"]["sqldb"]
+        )
+
     if message.content.lower().startswith("-help connectiontune") or message.content.lower().startswith("-help mallowsbot"):
         await connectionTune.helpConnectionTune(message)
 
@@ -117,7 +145,13 @@ async def on_message(message: discord.Message):
     
     if message.content.lower().startswith("-help calendar"):
         await cal_module.helpCalendar(message)   
-    
+
+@client.event
+async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+    await soundboard.handleSoundboardReaction(
+        reaction, user, config["DEFAULT"]["sqldb"], config["DEFAULT"]["path"]
+    )
+
 @client.event
 async def on_voice_state_update(member, before, after):
     path = config["DEFAULT"]["path"] + os.path.sep + 'Video.Audio'
@@ -159,6 +193,3 @@ async def sendError(guild,e):
     await botchannel.send(embed=embed)
         
 client.run(config["KEY"]["testclientkey"])
-
-
-
